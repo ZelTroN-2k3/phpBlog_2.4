@@ -1,0 +1,32 @@
+# phpBlog .gitignore
+
+# Configuration
+config/install.lock
+
+# Uploads
+uploads/*
+!uploads/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+error_log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Backup files
+*.bak
+*.backup
