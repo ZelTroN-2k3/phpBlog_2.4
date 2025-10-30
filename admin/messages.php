@@ -2,8 +2,13 @@
 include "header.php";
 
 if (isset($_GET['id'])) {
-    $id  = $_GET['id'];
-    $del = mysqli_query($connect, "DELETE FROM messages WHERE id = '$id'");
+    $id = (int)$_GET['id']; // Assurer que c'est un entier
+    
+    // Utiliser une requête préparée pour la suppression
+    $stmt = mysqli_prepare($connect, "DELETE FROM messages WHERE id = ?");
+    mysqli_stmt_bind_param($stmt, "i", $id);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_close($stmt);
 }
 ?>
 	<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">

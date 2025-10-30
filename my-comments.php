@@ -14,8 +14,14 @@ if ($logged == 'No') {
 }
 
 if (isset($_GET['delete-comment'])) {
-    $id    = (int) $_GET["delete-comment"];
-    $query = mysqli_query($connect, "DELETE FROM `comments` WHERE user_id='$user_id' AND id='$id'");
+    $id = (int)$_GET["delete-comment"];
+    
+    // Utiliser une requête préparée
+    $stmt = mysqli_prepare($connect, "DELETE FROM `comments` WHERE user_id=? AND id=?");
+    // Notez "si" car $user_id vient de la session (peut être string), et "i" pour $id
+    mysqli_stmt_bind_param($stmt, "si", $user_id, $id); 
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_close($stmt);
 }
 ?>
     <div class="col-md-8 mb-3">

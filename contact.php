@@ -67,9 +67,9 @@ if (isset($_POST['send'])) {
         $name = $rowu['username'];
         $email = $rowu['email'];
     }
-    $content = $_POST['text'];
+    $content = $_POST['text']; // Le htmlspecialchars sera fait à l'affichage
     
-    $date = date('d F Y');
+    $date = date('d F Y'); // Note: Stocker en format Y-m-d est préférable
     $time = date('H:i');
 	
 	$captcha = '';
@@ -77,19 +77,30 @@ if (isset($_POST['send'])) {
     if (isset($_POST['g-recaptcha-response'])) {
         $captcha = $_POST['g-recaptcha-response'];
     }
-    if ($captcha) {
+    
+    // Vous devriez vérifier si $captcha n'est pas vide
+    if (!empty($captcha)) {
         $url          = 'https://www.google.com/recaptcha/api/siteverify?secret=' . urlencode($settings['gcaptcha_secretkey']) . '&response=' . urlencode($captcha);
         $response     = file_get_contents($url);
         $responseKeys = json_decode($response, true);
+        
         if ($responseKeys["success"]) {
-            
             if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 echo '<div class="alert alert-danger">The entered E-Mail Address is invalid.</div>';
             } else {
-                $query = mysqli_query($connect, "INSERT INTO messages (name, email, content, date, time) VALUES('$name','$email','$content','$date','$time')");
+                // Requête préparée pour l'insertion
+                $stmt = mysqli_prepare($connect, "INSERT INTO messages (name, email, content, date, time) VALUES(?, ?, ?, ?, ?)");
+                mysqli_stmt_bind_param($stmt, "sssss", $name, $email, $content, $date, $time);
+                mysqli_stmt_execute($stmt);
+                mysqli_stmt_close($stmt);
+                
                 echo '<div class="alert alert-success">Your message has been sent successfully.</div>';
             }
+        } else {
+             echo '<div class="alert alert-danger">Failed to verify reCAPTCHA.</div>';
         }
+    } else {
+        echo '<div class="alert alert-danger">Please complete the reCAPTCHA.</div>';
     }
 }
 ?>
