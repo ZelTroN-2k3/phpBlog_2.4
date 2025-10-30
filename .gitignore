@@ -1,0 +1,60 @@
+# phpBlog .gitignore
+
+# Configuration files with sensitive data
+config/config.php
+
+# Uploaded files
+public/uploads/*
+!public/uploads/.gitkeep
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# IDE Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+nbproject/
+
+# Logs
+*.log
+error_log
+access_log
+
+# Temporary files
+tmp/
+temp/
+cache/
+
+# Backup files
+*.bak
+*.backup
+*.old
+*.orig
+
+# Database dumps
+*.sql.gz
+*.sql.bz2
+backup_*.sql
+
+# PHP
+vendor/
+composer.lock
+composer.phar
+
+# Node modules (if using build tools)
+node_modules/
+package-lock.json
+
+# Build files
+dist/
+build/
