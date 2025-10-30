@@ -23,21 +23,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Database connection test
         try {
             // Validate and sanitize inputs
-            $db_host = filter_var($_POST['db_host'] ?? '', FILTER_SANITIZE_STRING);
+            $db_host = trim($_POST['db_host'] ?? '');
             $db_name = preg_replace('/[^a-zA-Z0-9_]/', '', $_POST['db_name'] ?? '');
-            $db_user = filter_var($_POST['db_user'] ?? '', FILTER_SANITIZE_STRING);
+            $db_user = trim($_POST['db_user'] ?? '');
             $db_pass = $_POST['db_pass'] ?? '';
             
+            // Validate inputs
             if (empty($db_host) || empty($db_name) || empty($db_user)) {
                 throw new Exception('All database fields are required');
+            }
+            
+            // Check database name length (MySQL limit is 64 characters)
+            if (strlen($db_name) > 64) {
+                throw new Exception('Database name is too long (max 64 characters)');
             }
             
             $dsn = 'mysql:host=' . $db_host . ';charset=utf8mb4';
             $pdo = new PDO($dsn, $db_user, $db_pass);
             
-            // Create database if not exists using prepared statement
-            $stmt = $pdo->prepare("CREATE DATABASE IF NOT EXISTS `" . $db_name . "` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-            $stmt->execute();
+            // Create database if not exists - using backticks for proper escaping
+            $pdo->exec("CREATE DATABASE IF NOT EXISTS `" . $db_name . "` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
             
             // Update config file with proper escaping
             $config_content = file_get_contents('config/config.php');
@@ -83,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             require_once 'includes/security.php';
             
             // Validate inputs
-            $username = filter_var($_POST['admin_username'] ?? '', FILTER_SANITIZE_STRING);
+            $username = trim($_POST['admin_username'] ?? '');
             $email = filter_var($_POST['admin_email'] ?? '', FILTER_VALIDATE_EMAIL);
             $password = $_POST['admin_password'] ?? '';
             
