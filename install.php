@@ -22,18 +22,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($step === 1) {
         // Database connection test
         try {
-            $dsn = 'mysql:host=' . $_POST['db_host'] . ';charset=utf8mb4';
-            $pdo = new PDO($dsn, $_POST['db_user'], $_POST['db_pass']);
+            // Validate and sanitize inputs
+            $db_host = filter_var($_POST['db_host'] ?? '', FILTER_SANITIZE_STRING);
+            $db_name = preg_replace('/[^a-zA-Z0-9_]/', '', $_POST['db_name'] ?? '');
+            $db_user = filter_var($_POST['db_user'] ?? '', FILTER_SANITIZE_STRING);
+            $db_pass = $_POST['db_pass'] ?? '';
             
-            // Create database if not exists
-            $pdo->exec("CREATE DATABASE IF NOT EXISTS " . $_POST['db_name'] . " CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+            if (empty($db_host) || empty($db_name) || empty($db_user)) {
+                throw new Exception('All database fields are required');
+            }
             
-            // Update config file
+            $dsn = 'mysql:host=' . $db_host . ';charset=utf8mb4';
+            $pdo = new PDO($dsn, $db_user, $db_pass);
+            
+            // Create database if not exists using prepared statement
+            $stmt = $pdo->prepare("CREATE DATABASE IF NOT EXISTS `" . $db_name . "` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+            $stmt->execute();
+            
+            // Update config file with proper escaping
             $config_content = file_get_contents('config/config.php');
-            $config_content = str_replace("define('DB_HOST', 'localhost');", "define('DB_HOST', '" . $_POST['db_host'] . "');", $config_content);
-            $config_content = str_replace("define('DB_NAME', 'phpblog');", "define('DB_NAME', '" . $_POST['db_name'] . "');", $config_content);
-            $config_content = str_replace("define('DB_USER', 'root');", "define('DB_USER', '" . $_POST['db_user'] . "');", $config_content);
-            $config_content = str_replace("define('DB_PASS', '');", "define('DB_PASS', '" . addslashes($_POST['db_pass']) . "');", $config_content);
+            $config_content = str_replace("define('DB_HOST', 'localhost');", "define('DB_HOST', '" . addslashes($db_host) . "');", $config_content);
+            $config_content = str_replace("define('DB_NAME', 'phpblog');", "define('DB_NAME', '" . addslashes($db_name) . "');", $config_content);
+            $config_content = str_replace("define('DB_USER', 'root');", "define('DB_USER', '" . addslashes($db_user) . "');", $config_content);
+            $config_content = str_replace("define('DB_PASS', '');", "define('DB_PASS', '" . addslashes($db_pass) . "');", $config_content);
             
             // Generate site key
             $site_key = bin2hex(random_bytes(32));
@@ -46,6 +57,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit();
         } catch (PDOException $e) {
             $error = 'Database connection failed: ' . $e->getMessage();
+        } catch (Exception $e) {
+            $error = $e->getMessage();
         }
     } elseif ($step === 2) {
         // Import database schema
@@ -69,16 +82,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             require_once 'config/config.php';
             require_once 'includes/security.php';
             
+            // Validate inputs
+            $username = filter_var($_POST['admin_username'] ?? '', FILTER_SANITIZE_STRING);
+            $email = filter_var($_POST['admin_email'] ?? '', FILTER_VALIDATE_EMAIL);
+            $password = $_POST['admin_password'] ?? '';
+            
+            if (empty($username) || empty($email) || empty($password)) {
+                throw new Exception('All fields are required');
+            }
+            
+            if (!$email) {
+                throw new Exception('Invalid email address');
+            }
+            
+            if (strlen($password) < 8) {
+                throw new Exception('Password must be at least 8 characters');
+            }
+            
             $dsn = 'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4';
             $pdo = new PDO($dsn, DB_USER, DB_PASS);
             
-            $username = $_POST['admin_username'];
-            $email = $_POST['admin_email'];
-            $password = hash_password($_POST['admin_password']);
+            $hashed_password = hash_password($password);
             
-            // Update admin user
+            // Update admin user with validated data
             $stmt = $pdo->prepare("UPDATE users SET username = ?, email = ?, password = ? WHERE id = 1");
-            $stmt->execute([$username, $email, $password]);
+            $stmt->execute([$username, $email, $hashed_password]);
             
             // Create install lock file
             file_put_contents($install_lock, date('Y-m-d H:i:s'));
@@ -87,6 +115,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit();
         } catch (PDOException $e) {
             $error = 'Admin user creation failed: ' . $e->getMessage();
+        } catch (Exception $e) {
+            $error = $e->getMessage();
         }
     }
 }
