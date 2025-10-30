@@ -1,0 +1,77 @@
+<?php
+include "header.php";
+
+if (isset($_POST['add'])) {
+    $title   = $_POST['title'];
+    $slug    = generateSeoURL($title, 0);
+    $content = htmlspecialchars($_POST['content']);
+
+    // Use prepared statements to prevent SQL injection
+    $stmt = mysqli_prepare($connect, "SELECT title FROM `pages` WHERE title=? LIMIT 1");
+    mysqli_stmt_bind_param($stmt, "s", $title);
+    mysqli_stmt_execute($stmt);
+    $queryvalid = mysqli_stmt_get_result($stmt);
+    mysqli_stmt_close($stmt);
+
+    $validator = mysqli_num_rows($queryvalid);
+    if ($validator > 0) {
+        echo '<br />
+            <div class="alert alert-warning">
+                <i class="fas fa-info-circle"></i> Page with this name has already been added.
+            </div>';
+    } else {
+        $stmt = mysqli_prepare($connect, "INSERT INTO pages (title, slug, content) VALUES (?, ?, ?)");
+        mysqli_stmt_bind_param($stmt, "sss", $title, $slug, $content);
+        mysqli_stmt_execute($stmt);
+        $page_id = mysqli_insert_id($connect); // Get the ID of the new page
+        mysqli_stmt_close($stmt);
+
+        if ($page_id) {
+            $menu_page = $title;
+            $menu_path = 'page?name=' . $slug;
+            $menu_icon = 'fa-columns';
+
+            $stmt = mysqli_prepare($connect, "INSERT INTO menu (page, path, fa_icon) VALUES (?, ?, ?)");
+            mysqli_stmt_bind_param($stmt, "sss", $menu_page, $menu_path, $menu_icon);
+            mysqli_stmt_execute($stmt);
+            mysqli_stmt_close($stmt);
+        }
+
+        echo '<meta http-equiv="refresh" content="0;url=pages.php">';
+    }
+}
+?>
+	<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+		<h3 class="h3"><i class="fas fa-file-alt"></i> Pages</h3>
+	</div>
+	
+            <div class="card">
+              <h6 class="card-header">Add Page</h6>         
+                  <div class="card-body">
+                      <form action="" method="post">
+						<p>
+							<label>Title</label>
+							<input class="form-control" name="title" value="" type="text" required>
+						</p>
+						<p>
+							<label>Content</label>
+							<textarea class="form-control" id="summernote" name="content" required></textarea>
+						</p>
+							<input type="submit" name="add" class="btn btn-primary col-12" value="Add" />
+					  </form>                            
+                  </div>
+            </div>
+
+<script>
+$(document).ready(function() {
+	$('#summernote').summernote({height: 350});
+	
+	var noteBar = $('.note-toolbar');
+		noteBar.find('[data-toggle]').each(function() {
+		$(this).attr('data-bs-toggle', $(this).attr('data-toggle')).removeAttr('data-toggle');
+	});
+});
+</script>
+<?php
+include "footer.php";
+?>
