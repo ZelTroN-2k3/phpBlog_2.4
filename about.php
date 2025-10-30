@@ -8,7 +8,7 @@ session_start();
 $db = Database::getInstance()->getConnection();
 
 // Get settings
-$stmt = $db->query("SELECT * FROM settings");
+$stmt = $db->query("SELECT setting_key, setting_value FROM settings");
 $settings = $stmt->fetchAll();
 $site_settings = [];
 foreach ($settings as $setting) {

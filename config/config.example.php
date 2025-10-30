@@ -9,12 +9,12 @@
 define('DB_HOST', 'localhost');          // Database host (usually localhost)
 define('DB_NAME', 'phpblog');           // Database name
 define('DB_USER', 'root');              // Database username
-define('DB_PASS', '');                  // Database password
+define('DB_PASS', 'your_secure_password_here');  // Database password - CHANGE THIS!
 
 // Site Configuration
 define('SITE_NAME', 'phpBlog');                        // Your site name
 define('SITE_TAGLINE', 'News, Blog & Magazine CMS');  // Your site tagline
-define('SITE_URL', 'http://localhost/phpBlog_2.4');   // Your site URL (no trailing slash)
+define('SITE_URL', 'https://yourdomain.com');         // Your site URL (no trailing slash) - Use HTTPS in production
 define('ADMIN_EMAIL', 'admin@phpblog.com');           // Admin email address
 
 // Path Configuration (Usually no need to change these)
