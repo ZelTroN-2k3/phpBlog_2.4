@@ -69,7 +69,7 @@ if (isset($_GET['edit-id'])) {
         $title       = $_POST['title'];
         $slug        = generateSeoURL($title);
         $image       = $row['image'];
-        $active      = $_POST['active'];
+        $active      = $_POST['active']; // Sera "Draft", "Yes", ou "No"
         $featured    = $_POST['featured'];
         $category_id = $_POST['category_id'];
         $content     = htmlspecialchars($_POST['content']);
@@ -217,22 +217,16 @@ if ($row['image'] != '') {
 ?>
 					<input type="file" name="image" class="form-control" />
 				</p>
-				<p>
-				<label>Active</label><br />
+				
+                <p>
+				<label>Statut</label><br />
 				<select name="active" class="form-select" required>
-					<option value="Yes" <?php
-if ($row['active'] == "Yes") {
-	echo 'selected';
-}
-?>>Yes</option>
-					<option value="No" <?php
-if ($row['active'] == "No") {
-	echo 'selected';
-}
-?>>No</option>
+					<option value="Draft" <?php if ($row['active'] == "Draft") { echo 'selected'; } ?>>Ébauche (Brouillon)</option>
+                    <option value="Yes" <?php if ($row['active'] == "Yes") { echo 'selected'; } ?>>Publié (Public)</option>
+					<option value="No" <?php if ($row['active'] == "No") { echo 'selected'; } ?>>Inactif (Caché)</option>
 				</select>
 				</p>
-				<p>
+                <p>
 					<label>Featured</label><br />
 					<select name="featured" class="form-select" required>
 						<option value="Yes" <?php
@@ -313,8 +307,7 @@ echo html_entity_decode($row['content']);
 						<th>Title</th>
 						<th>Author</th>
 						<th>Date</th>
-						<th>Active</th>
-						<th>Category</th>
+						<th>Statut</th> <th>Category</th>
 						<th>Actions</th>
 					</tr>
 				</thead>
@@ -343,14 +336,17 @@ while ($row = mysqli_fetch_assoc($sql)) {
 						<td>' . $row['title'] . ' ' . $featured . '</td>
 						<td>' . post_author($row['author_id']) . '</td>
 						<td data-sort="' . strtotime($row['created_at']) . '">' . date($settings['date_format'] . ' H:i', strtotime($row['created_at'])) . '</td>
-						<td>';
-	if($row['active'] == "Yes") {
-		echo '<span class="badge bg-success">Yes</span>';
-	} else {
-		echo '<span class="badge bg-danger">No</span>';
-	}
-	echo '</td>
-						<td>' . $cat['category'] . '</td>
+						
+                        <td>';
+    if($row['active'] == "Yes") {
+        echo '<span class="badge bg-success">Publié</span>';
+    } elseif($row['active'] == "Draft") {
+        echo '<span class="badge bg-warning text-dark">Ébauche</span>';
+    } else {
+        echo '<span class="badge bg-danger">Inactif</span>';
+    }
+    echo '</td>
+                        <td>' . $cat['category'] . '</td>
 						<td>
 							<a href="?edit-id=' . $row['id'] . '" class="btn btn-primary btn-sm"><i class="fa fa-edit"></i> Edit</a>
 							<a href="?delete-id=' . $row['id'] . '" class="btn btn-danger btn-sm"><i class="fa fa-trash"></i> Delete</a>

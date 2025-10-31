@@ -13,6 +13,7 @@ DROP TABLE IF EXISTS `widgets`;
 DROP TABLE IF EXISTS `tags`;
 DROP TABLE IF EXISTS `post_tags`;
 DROP TABLE IF EXISTS `post_likes`;
+DROP TABLE IF EXISTS `user_favorites`;
 
 -- --------------------------------------------------------
 
@@ -124,7 +125,7 @@ CREATE TABLE IF NOT EXISTS `posts` (
   `image` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `content` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
   `author_id` int(11) NOT NULL DEFAULT 1,
-  `active` varchar(3) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Yes',
+  `active` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Draft',
   `featured` varchar(3) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'No',
   `download_link` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `github_link` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -161,6 +162,18 @@ CREATE TABLE IF NOT EXISTS `post_likes` (
 
 -- --------------------------------------------------------
 
+--
+-- NOUVELLE TABLE : user_favorites
+--
+CREATE TABLE IF NOT EXISTS `user_favorites` (
+  `id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `post_id` int(11) NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
 CREATE TABLE IF NOT EXISTS `widgets` (
   `id` int(11) NOT NULL,
   `title` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -179,6 +192,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `password` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `email` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `avatar` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'assets/img/avatar.png',
+  `bio` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `role` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'User'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -229,6 +243,15 @@ ALTER TABLE `post_likes`
   ADD UNIQUE KEY `session_like` (`post_id`,`session_id`(191)),
   ADD KEY `post_id` (`post_id`);
 
+--
+-- Index pour la table `user_favorites`
+--
+ALTER TABLE `user_favorites`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `user_favorite_post` (`user_id`,`post_id`),
+  ADD KEY `user_id` (`user_id`),
+  ADD KEY `post_id` (`post_id`);
+
 ALTER TABLE `users`
   ADD PRIMARY KEY (`id`);
 
@@ -272,6 +295,12 @@ ALTER TABLE `post_tags`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 ALTER TABLE `post_likes`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT pour la table `user_favorites`
+--
+ALTER TABLE `user_favorites`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
   
 ALTER TABLE `users`

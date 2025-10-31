@@ -4,7 +4,7 @@ include "header.php";
 if (isset($_POST['add'])) {
     $title       = $_POST['title'];
     $slug        = generateSeoURL($title);
-    $active      = $_POST['active'];
+    $active      = $_POST['active']; // Sera "Draft", "Yes" ou "No"
     $featured    = $_POST['featured'];
     $category_id = $_POST['category_id'];
     $content     = htmlspecialchars($_POST['content']);
@@ -111,7 +111,8 @@ if (isset($_POST['add'])) {
         // --- FIN GESTION DES TAGS ---
 
         // ... (partie newsletter, reste inchangée) ...
-        if ($post_id) {
+        // MODIFICATION : N'envoyer la newsletter que si l'article est "Publié"
+        if ($post_id && $active == 'Yes') {
             $from     = $settings['email'];
             $sitename = $settings['sitename'];
             
@@ -166,14 +167,16 @@ if (isset($_POST['add'])) {
 						<label>Image</label>
 						<input type="file" name="image" class="form-control" />
 					</p>
-					<p>
-						<label>Active</label><br />
+					
+                    <p>
+						<label>Statut</label><br />
 						<select name="active" class="form-select" required>
-							<option value="Yes" selected>Yes</option>
-							<option value="No">No</option>
+							<option value="Draft" selected>Ébauche (Brouillon)</option>
+                            <option value="Yes">Publié (Public)</option>
+							<option value="No">Inactif (Caché)</option>
                         </select>
 					</p>
-					<p>
+                    <p>
 						<label>Featured</label><br />
 						<select name="featured" class="form-select" required>
 							<option value="Yes">Yes</option>
