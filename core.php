@@ -514,7 +514,6 @@ function head()
         $pagetitle   = $rowct['category'];
 		$description = 'View all blog posts from ' . $rowct['category'] . ' category.';
     
-    // MODIFICATION : Ajout de la page Tag
     } else if ($current_page == 'tag.php') {
         $slug = $_GET['name'] ?? '';
         
@@ -540,7 +539,6 @@ function head()
         $pagetitle   = 'Articles tagués : ' . $rowtag['name'];
 		$description = 'Voir tous les articles avec le tag ' . $rowtag['name'];
     }
-    // FIN MODIFICATION
     
     // Utiliser htmlspecialchars pour le titre et la description
     if ($current_page == 'index.php') {
@@ -946,7 +944,7 @@ if ($count <= 0) {
     while ($row = mysqli_fetch_assoc($run)) {
         // Utiliser htmlspecialchars
         echo '<a href="post?name=' . htmlspecialchars($row['slug']) . '">' . htmlspecialchars($row['title']) . '</a>
-        &nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;';
+        &nbsp;&;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;';
     }
 }
 ?>
@@ -996,30 +994,28 @@ function sidebar() {
 					<div class="card-body">
 						<ul class="list-group">
 <?php
-    // Requête simple sans variable externe
-    $runq = mysqli_query($connect, "SELECT * FROM `categories` ORDER BY category ASC");
-    while ($row = mysqli_fetch_assoc($runq)) {
-        $category_id = (int)$row['id']; // Assurer que c'est un entier
-        
-        // Requête préparée pour compter les posts
-        $stmt_post_count = mysqli_prepare($connect, "SELECT COUNT(id) AS count FROM `posts` WHERE category_id = ? AND active = 'Yes'");
-        mysqli_stmt_bind_param($stmt_post_count, "i", $category_id);
-        mysqli_stmt_execute($stmt_post_count);
-        $postc_result = mysqli_stmt_get_result($stmt_post_count);
-        $postc_row = mysqli_fetch_assoc($postc_result);
-		$posts_count = $postc_row['count'];
-        mysqli_stmt_close($stmt_post_count);
-
-        // Utiliser htmlspecialchars
+    // --- MODIFICATION : Requête unique pour les catégories ---
+    $categories_query = mysqli_query($connect, "
+        SELECT 
+            c.category, c.slug, COUNT(p.id) AS posts_count
+        FROM `categories` c
+        LEFT JOIN `posts` p ON c.id = p.category_id AND p.active = 'Yes'
+        GROUP BY c.id
+        ORDER BY c.category ASC
+    ");
+    
+    while ($row = mysqli_fetch_assoc($categories_query)) {
+        // Plus besoin de requête N+1 ici
         echo '
 							<a href="category?name=' . htmlspecialchars($row['slug']) . '">
 								<li class="list-group-item d-flex justify-content-between align-items-center">
 									' . htmlspecialchars($row['category']) . '
-									<span class="badge bg-secondary rounded-pill">' . $posts_count . '</span>
+									<span class="badge bg-secondary rounded-pill">' . $row['posts_count'] . '</span>
 								</li>
 							</a>
 		';
     }
+    // --- FIN MODIFICATION ---
 ?>
 						</ul>
 					</div>
@@ -1062,6 +1058,7 @@ function sidebar() {
 						</div>
 					</div>
 				</div>
+				
 				<div class="card mt-3">
 					<div class="card-header">
 						<ul class="nav nav-tabs card-header-tabs nav-justified">
@@ -1126,68 +1123,61 @@ function sidebar() {
 							</div>
 							<div id="commentss" class="tab-pane fade">
 <?php
-    // Requête simple sans variable externe
-    $query = mysqli_query($connect, "SELECT * FROM `comments` WHERE approved='Yes' ORDER BY `id` DESC LIMIT 4");
-    $cmnts = mysqli_num_rows($query);
+    // --- MODIFICATION : Requête unique pour les commentaires récents ---
+    $comments_query = mysqli_query($connect, "
+        SELECT 
+            c.id, c.user_id, c.guest, c.created_at,
+            p.title AS post_title, p.slug AS post_slug,
+            u.username AS user_username, u.avatar AS user_avatar
+        FROM `comments` c
+        JOIN `posts` p ON c.post_id = p.id
+        LEFT JOIN `users` u ON c.user_id = u.id AND c.guest = 'No'
+        WHERE c.approved='Yes' AND p.active='Yes'
+        ORDER BY c.id DESC 
+        LIMIT 4
+    ");
+    
+    $cmnts = mysqli_num_rows($comments_query);
     if ($cmnts == "0") {
         echo "There are no comments";
     } else {
-        while ($row = mysqli_fetch_array($query)) {
+        while ($row = mysqli_fetch_assoc($comments_query)) {
 			
-			$badge = '';
-			$acuthor_id = $row['user_id']; // ID ou nom de l'invité
-            $acuthor_name = '';
 			$acavatar = 'assets/img/avatar.png'; // Défaut
+            $acuthor_name = 'Guest';
 
             if ($row['guest'] == 'Yes') {
-                $acuthor_name = $acuthor_id; // C'est le nom de l'invité
-				$badge = ' <span class="badge bg-secondary">Guest</span>';
-            } else {
-                // Requête préparée pour obtenir les infos utilisateur
-                $stmt_comment_author = mysqli_prepare($connect, "SELECT * FROM `users` WHERE id=? LIMIT 1");
-                mysqli_stmt_bind_param($stmt_comment_author, "s", $acuthor_id); // "s" car user_id est VARCHAR
-                mysqli_stmt_execute($stmt_comment_author);
-                $result_comment_author = mysqli_stmt_get_result($stmt_comment_author);
-                
-                if (mysqli_num_rows($result_comment_author) > 0) {
-                    $rowch = mysqli_fetch_assoc($result_comment_author);
-                    $acavatar = $rowch['avatar'];
-                    $acuthor_name = $rowch['username'];
-                }
-                mysqli_stmt_close($stmt_comment_author);
+                $acuthor_name = $row['user_id']; // C'est le nom de l'invité
+            } else if ($row['user_username']) {
+                // L'utilisateur a été trouvé
+                $acavatar = $row['user_avatar'];
+                $acuthor_name = $row['user_username'];
             }
+            // Si $row['guest'] == 'No' mais que $row['user_username'] est NULL (utilisateur supprimé),
+            // $acuthor_name restera 'Guest' (ou vous pourriez mettre 'Utilisateur supprimé')
 			
-            // Requête préparée pour obtenir les infos du post
-            $post_id_comment = (int)$row['post_id'];
-            $stmt_comment_post = mysqli_prepare($connect, "SELECT * FROM `posts` WHERE active='Yes' AND id=?");
-            mysqli_stmt_bind_param($stmt_comment_post, "i", $post_id_comment);
-            mysqli_stmt_execute($stmt_comment_post);
-            $result_comment_post = mysqli_stmt_get_result($stmt_comment_post);
-
-            while ($row2 = mysqli_fetch_array($result_comment_post)) {
-                // Utiliser htmlspecialchars
-				echo '
+            // Plus besoin de requêtes N+1 ici
+            echo '
 								<div class="mb-2 d-flex flex-start align-items-center bg-light rounded border">
-									<a href="post?name=' . htmlspecialchars($row2['slug']) . '#comments" class="ms-2">
+									<a href="post?name=' . htmlspecialchars($row['post_slug']) . '#comments" class="ms-2">
 										<img class="rounded-circle shadow-1-strong me-2"
 										src="' . htmlspecialchars($acavatar) . '" alt="' . htmlspecialchars($acuthor_name) . '" 
 										width="60" height="60" />
 									</a>
 									<div class="mt-1 mb-1 ms-1 me-1">
 										<h6 class="text-primary mb-1">
-											<a href="post?name=' . htmlspecialchars($row2['slug']) . '#comments">' . htmlspecialchars($acuthor_name) . '</a>
+											<a href="post?name=' . htmlspecialchars($row['post_slug']) . '#comments">' . htmlspecialchars($acuthor_name) . '</a>
 										</h6>
 										<p class="text-muted small mb-0">
-											on <a href="post?name=' . htmlspecialchars($row2['slug']) . '#comments">' . htmlspecialchars($row2['title']) . '</a><br />
+											on <a href="post?name=' . htmlspecialchars($row['post_slug']) . '#comments">' . htmlspecialchars($row['post_title']) . '</a><br />
 											<i class="fas fa-calendar"></i> ' . date($settings['date_format'] . ' H:i', strtotime($row['created_at'])) . '
 										</p>
 									</div>
 								</div>
 ';
-            }
-            mysqli_stmt_close($stmt_comment_post);
         }
     }
+    // --- FIN MODIFICATION ---
 ?>
                             </div>
                         </div>
