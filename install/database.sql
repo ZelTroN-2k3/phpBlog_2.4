@@ -12,6 +12,7 @@ DROP TABLE IF EXISTS `users`;
 DROP TABLE IF EXISTS `widgets`;
 DROP TABLE IF EXISTS `tags`;
 DROP TABLE IF EXISTS `post_tags`;
+DROP TABLE IF EXISTS `post_likes`;
 
 -- --------------------------------------------------------
 
@@ -150,6 +151,16 @@ CREATE TABLE IF NOT EXISTS `post_tags` (
 
 -- --------------------------------------------------------
 
+CREATE TABLE IF NOT EXISTS `post_likes` (
+  `id` int(11) NOT NULL,
+  `post_id` int(11) NOT NULL,
+  `user_id` int(11) DEFAULT NULL,
+  `session_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
 CREATE TABLE IF NOT EXISTS `widgets` (
   `id` int(11) NOT NULL,
   `title` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -212,6 +223,12 @@ ALTER TABLE `post_tags`
   ADD KEY `post_id` (`post_id`),
   ADD KEY `tag_id` (`tag_id`);
 
+ALTER TABLE `post_likes`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `user_like` (`post_id`,`user_id`),
+  ADD UNIQUE KEY `session_like` (`post_id`,`session_id`(191)),
+  ADD KEY `post_id` (`post_id`);
+
 ALTER TABLE `users`
   ADD PRIMARY KEY (`id`);
 
@@ -254,6 +271,9 @@ ALTER TABLE `tags`
 ALTER TABLE `post_tags`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
+ALTER TABLE `post_likes`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  
 ALTER TABLE `users`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
 
