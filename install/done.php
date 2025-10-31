@@ -9,7 +9,8 @@ $database_password = $_SESSION['database_password'];
 $database_name     = $_SESSION['database_name'];
 $username          = $_SESSION['username'];
 $email             = $_SESSION['email'];
-$password          = hash('sha256', $_SESSION['password']);
+// MODIFICATION : Utiliser password_hash()
+$password          = password_hash($_SESSION['password'], PASSWORD_DEFAULT);
 
 if (isset($_SERVER['HTTPS'])) {
     $htp = 'https';
@@ -53,7 +54,12 @@ if ($db) {
     $config_file = str_replace("<DB_PASSWORD>", $database_password, $config_file);
     
     $link  = new mysqli($database_host, $database_username, $database_password, $database_name);
-    $query = mysqli_query($link, "INSERT INTO `users` (username, password, email, role) VALUES ('$username', '$password', '$email', 'Admin')");
+    
+    // MODIFICATION : Utiliser une requête préparée
+    $stmt = mysqli_prepare($link, "INSERT INTO `users` (username, password, email, role) VALUES (?, ?, ?, 'Admin')");
+    mysqli_stmt_bind_param($stmt, "sss", $username, $password, $email);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_close($stmt);
 	
     @chmod(CONFIG_FILE_PATH, 0777);
     @$f = fopen(CONFIG_FILE_PATH, "w+");
