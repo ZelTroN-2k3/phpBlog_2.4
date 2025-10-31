@@ -23,7 +23,7 @@ if (isset($_POST['save'])) {
     $email    = $_POST['email'];
     $username = $_POST['username'];
     $avatar   = $rowu['avatar'];
-    $password = $_POST['password'];
+    $password = $_POST['password']; // C'est le mot de passe en clair
     
     $emused = 'No';
     
@@ -70,10 +70,11 @@ if (isset($_POST['save'])) {
     if (filter_var($email, FILTER_VALIDATE_EMAIL) && $emused == 'No') {
         
         if ($password != null) {
-            $password = hash('sha256', $_POST['password']);
+            // MODIFICATION : Utiliser password_hash()
+            $password_hashed = password_hash($password, PASSWORD_DEFAULT);
             // Use prepared statement for UPDATE with password
             $stmt = mysqli_prepare($connect, "UPDATE `users` SET email=?, username=?, avatar=?, password=? WHERE id=?");
-            mysqli_stmt_bind_param($stmt, "ssssi", $email, $username, $avatar, $password, $user_id);
+            mysqli_stmt_bind_param($stmt, "ssssi", $email, $username, $avatar, $password_hashed, $user_id);
             mysqli_stmt_execute($stmt);
             mysqli_stmt_close($stmt);
         } else {

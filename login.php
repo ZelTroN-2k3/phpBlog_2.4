@@ -24,21 +24,36 @@ $error = 0;
 <?php
 if (isset($_POST['signin'])) {
     $username = $_POST['username'];
-    $password = hash('sha256', $_POST['password']);
+    $password_plain = $_POST['password']; // Mot de passe en clair
     
-    // Use prepared statement for sign-in
-    $stmt = mysqli_prepare($connect, "SELECT username FROM `users` WHERE `username`=? AND password=?");
-    mysqli_stmt_bind_param($stmt, "ss", $username, $password);
+    // 1. Récupérer le hash du mot de passe pour cet utilisateur
+    $stmt = mysqli_prepare($connect, "SELECT username, password FROM `users` WHERE `username`=?");
+    mysqli_stmt_bind_param($stmt, "s", $username);
     mysqli_stmt_execute($stmt);
     $result = mysqli_stmt_get_result($stmt);
     mysqli_stmt_close($stmt);
 
     if (mysqli_num_rows($result) > 0) {
-        $_SESSION['sec-username'] = $username;
-        echo '<meta http-equiv="refresh" content="0; url=' . $settings['site_url'] . '">';
+        $user_row = mysqli_fetch_assoc($result);
+        $hashed_password = $user_row['password'];
+
+        // 2. Vérifier le mot de passe en clair contre le hash
+        if (password_verify($password_plain, $hashed_password)) {
+            // Le mot de passe est correct !
+            $_SESSION['sec-username'] = $username;
+            echo '<meta http-equiv="refresh" content="0; url=' . $settings['site_url'] . '">';
+        } else {
+            // Mot de passe incorrect
+            echo '
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle"></i> The entered <strong>Username</strong> or <strong>Password</strong> is incorrect.
+            </div>';
+            $error = 1;
+        }
     } else {
+        // Utilisateur non trouvé
         echo '
-		<div class="alert alert-danger">
+        <div class="alert alert-danger">
             <i class="fas fa-exclamation-circle"></i> The entered <strong>Username</strong> or <strong>Password</strong> is incorrect.
         </div>';
         $error = 1;
@@ -74,7 +89,8 @@ if ($error == 1) {
                 <?php
 if (isset($_POST['register'])) {
     $username = $_POST['username'];
-    $password = hash('sha256', $_POST['password']);
+    // MODIFICATION : Utiliser password_hash()
+    $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
     $email    = $_POST['email'];
     $captcha  = '';
     if (isset($_POST['g-recaptcha-response'])) {
