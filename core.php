@@ -702,12 +702,13 @@ if ($settings['layout'] == 'Wide') {
 <?php
     } else {
 ?>
-					<li class="nav-item dropdown">
-						<a href="#" class="nav-link link-dark dropdown-toggle" data-bs-toggle="dropdown">
-							<i class="fas fa-user"></i> Profile <span class="caret"></span>
+                    <li class="nav-item dropdown">
+						<a href="#" class="nav-link link-dark dropdown-toggle d-flex align-items-center" data-bs-toggle="dropdown">
+							<img src="<?php echo htmlspecialchars($rowu['avatar']); ?>" alt="Avatar" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; margin-right: 5px;">
+							Profile <span class="caret"></span>
 						</a>
 						<ul class="dropdown-menu">
-							<li>
+					<li>
 								<a class="dropdown-item <?php
 if ($current_page == 'my-comments.php') {
 	echo ' active';
