@@ -238,6 +238,17 @@ function display_comments($post_id, $parent_id = 0, $level = 0) {
                     <button class="btn btn-sm btn-link" onclick="replyToComment(' . $comment['id'] . ')">
                         <i class="fas fa-reply"></i> Répondre
                     </button>
+                ';
+        
+                // AJOUT : Bouton Modifier si l'utilisateur est l'auteur
+                if ($logged == 'Yes' && $comment['guest'] == 'No' && $rowu['id'] == $comment['user_id']) {
+                    echo '
+                    <a href="edit-comment.php?id=' . $comment['id'] . '" class="btn btn-sm btn-link text-primary">
+                        <i class="fas fa-edit"></i> Modifier
+                    </a>';
+                }
+                
+                echo '
                 </div>
             </div>
         ';
@@ -254,7 +265,7 @@ function display_comments($post_id, $parent_id = 0, $level = 0) {
 
 // --- NOUVELLE FONCTION POUR L'AJAX ---
 function render_comment_html($comment_id, $margin_left = 0) {
-    global $connect, $settings;
+    global $connect, $settings, $logged, $rowu;
     
     // 1. Récupérer le commentaire
     $stmt_comment = mysqli_prepare($connect, "SELECT * FROM comments WHERE id=? AND approved='Yes' LIMIT 1");
@@ -319,11 +330,20 @@ function render_comment_html($comment_id, $margin_left = 0) {
                 <?php echo format_comment_with_code($comment['comment']); ?>
             </p>
             <hr class="my-0" />
-            <div class="p-2">
-                <button class="btn btn-sm btn-link" onclick="replyToComment(<?php echo $comment['id']; ?>)">
-                    <i class="fas fa-reply"></i> Répondre
-                </button>
-            </div>
+                <div class="p-2">
+                    <button class="btn btn-sm btn-link" onclick="replyToComment(<?php echo $comment['id']; ?>)">
+                        <i class="fas fa-reply"></i> Répondre
+                    </button>
+                    <?php
+                    // AJOUT : Bouton Modifier si l'utilisateur est l'auteur
+                    if ($logged == 'Yes' && $comment['guest'] == 'No' && $rowu['id'] == $comment['user_id']) {
+                        echo '
+                        <a href="edit-comment.php?id=' . $comment['id'] . '" class="btn btn-sm btn-link text-primary">
+                            <i class="fas fa-edit"></i> Modifier
+                        </a>';
+                    }
+                    ?>
+                </div>
         </div>
         </div>
     
