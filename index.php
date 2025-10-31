@@ -119,11 +119,14 @@ echo ' mb-3">
                                     <small class="text-muted">
 										<i class="far fa-calendar-alt"></i> ' . date($settings['date_format'] . ' H:i', strtotime($row['created_at'])) . '
 									</small>
-									<small><i class="fas fa-comments"></i> 
+                                    <small class="me-2"><i class="fas fa-comments"></i> 
                                         <a href="post?name=' . $row['slug'] . '#comments" class="blog-comments">
 											<strong>' . post_commentscount($row['id']) . '</strong>
 										</a>
                                     </small>
+									<small><i class="fas fa-thumbs-up"></i> 
+										<strong>' . get_post_like_count($row['id']) . '</strong>
+									</small>
                                 </div>
 								<div class="d-flex justify-content-between align-items-center">
                                     <a href="category?name=' . post_categoryslug($row['category_id']) . '">

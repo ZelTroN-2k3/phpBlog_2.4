@@ -68,7 +68,10 @@ if ($count <= 0) {
 												Posted by <b><i><i class="fas fa-user"></i> ' . post_author($row['author_id']) . '</i></b>
 												on <b><i><i class="far fa-calendar-alt"></i> ' . date($settings['date_format'] . ' H:i', strtotime($row['created_at'])) . '</i></b>
 											</small>
-											<small class="float-end"><i class="fas fa-comments"></i>
+                                            <small class="float-end">
+												<i class="fas fa-thumbs-up me-2"></i><b>' . get_post_like_count($row['id']) . '</b>
+
+												<i class="fas fa-comments ms-3"></i>
 												<a href="post?name=' . $row['slug'] . '#comments" class="blog-comments"><b>' . post_commentscount($row['id']) . '</b></a>
 											</small>
 										</div>

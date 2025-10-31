@@ -447,6 +447,45 @@ function post_commentscount($post_id)
     return $comments_count;
 }
 
+function get_post_like_count($post_id)
+{
+    global $connect;
+    $count = 0;
+    
+    $stmt = mysqli_prepare($connect, "SELECT COUNT(id) AS count FROM `post_likes` WHERE post_id=?");
+    mysqli_stmt_bind_param($stmt, "i", $post_id);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    
+    if ($row = mysqli_fetch_assoc($result)) {
+        $count = $row['count'];
+    }
+    mysqli_stmt_close($stmt);
+    return $count;
+}
+
+function check_user_has_liked($post_id)
+{
+    global $connect, $logged, $rowu;
+    
+    if ($logged == 'Yes') {
+        $user_id = $rowu['id'];
+        $stmt = mysqli_prepare($connect, "SELECT id FROM `post_likes` WHERE post_id=? AND user_id=?");
+        mysqli_stmt_bind_param($stmt, "ii", $post_id, $user_id);
+    } else {
+        $session_id = session_id();
+        $stmt = mysqli_prepare($connect, "SELECT id FROM `post_likes` WHERE post_id=? AND session_id=?");
+        mysqli_stmt_bind_param($stmt, "is", $post_id, $session_id);
+    }
+    
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $has_liked = (mysqli_num_rows($result) > 0);
+    mysqli_stmt_close($stmt);
+    
+    return $has_liked;
+}
+
 function head()
 {
     // Rendre $connect, $logged, $rowu, $settings accessibles

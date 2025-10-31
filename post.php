@@ -115,11 +115,31 @@ echo '
                 // --- FIN AFFICHAGE DES TAGS ---
                 
                 echo '
-				<h5><i class="fas fa-share-alt-square"></i> Share</h5>
+                <h5><i class="fas fa-share-alt-square"></i> Share</h5>
 				<div id="share" style="font-size: 14px;"></div>
+				
+				';
+
+				// Récupérer l'état du "like" et le compteur
+				$total_likes = get_post_like_count($post_id);
+				$user_has_liked = check_user_has_liked($post_id);
+				
+				$like_class = $user_has_liked ? 'btn-primary' : 'btn-outline-primary';
+				$like_text = $user_has_liked ? 'Aimé' : 'J\'aime';
+				?>
+				
+				<button class="btn <?php echo $like_class; ?> mt-2" id="like-button" data-post-id="<?php echo $post_id; ?>">
+					<i class="fas fa-thumbs-up"></i>
+					<span id="like-text"><?php echo $like_text; ?></span>
+					(<span id="like-count"><?php echo $total_likes; ?></span>)
+				</button>
 				<hr />
 
-                ';
+				<?php
+				
+				echo '
+				
+				';
                 
                 // 1. Trouver les tags de l'article actuel
                 $stmt_find_tags = mysqli_prepare($connect, "SELECT tag_id FROM post_tags WHERE post_id = ?");
@@ -298,7 +318,17 @@ if ($cancomment == 'Yes') {
                 </div>
             </div>
         </div>
-		
+
+<style>
+#like-button {
+    transition: all 0.3s ease;
+    min-width: 100px;
+}
+#like-button .fa-thumbs-up {
+    margin-right: 8px;
+}
+</style>
+
 <script>
 $("#share").jsSocials({
     showCount: false,
@@ -435,6 +465,53 @@ if (mainForm) {
 }
 // --- FIN GESTION AJAX ---
 </script>
+<script>
+// --- GESTION DU "LIKE" ---
+document.getElementById('like-button').addEventListener('click', function() {
+
+    const likeButton = this;
+    const postId = likeButton.dataset.postId;
+    const likeText = document.getElementById('like-text');
+    const likeCount = document.getElementById('like-count');
+
+    // Empêcher les double-clics
+    likeButton.disabled = true;
+
+    const formData = new FormData();
+    formData.append('post_id', postId);
+
+    fetch('ajax_like_post.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Mettre à jour le compteur
+            likeCount.innerText = data.new_count;
+
+            // Mettre à jour l'apparence du bouton
+            if (data.liked) {
+                likeButton.classList.remove('btn-outline-primary');
+                likeButton.classList.add('btn-primary');
+                likeText.innerText = 'Aimé';
+            } else {
+                likeButton.classList.remove('btn-primary');
+                likeButton.classList.add('btn-outline-primary');
+                likeText.innerText = 'J\'aime';
+            }
+        } else {
+            console.error(data.message);
+        }
+    })
+    .catch(error => console.error('Erreur:', error))
+    .finally(() => {
+        // Réactiver le bouton
+        likeButton.disabled = false;
+    });
+});
+</script>
+
 <?php
 if ($settings['sidebar_position'] == 'Right') {
 	sidebar();
