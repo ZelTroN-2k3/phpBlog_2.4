@@ -59,7 +59,7 @@ if ($count > 0) {
 					<a href="post?name=' . $row2['slug'] . '" class="text-light" style="text-shadow: 1px 1px black;">' . $row2['title'] . '</a>
 				</h5>
 				<p class="text-light" style="text-shadow: 1px 1px black;">
-					<i class="fas fa-calendar"></i> ' . date($settings['date_format'], strtotime($row2['date'])) . ', ' . $row2['time'] . '
+					<i class="fas fa-calendar"></i> ' . date($settings['date_format'] . ' H:i', strtotime($row2['created_at'])) . '
 				</p>
             </div>
         </div>
@@ -117,7 +117,7 @@ echo ' mb-3">
                                 <a href="post?name=' . $row['slug'] . '"><h6 class="card-title">' . $row['title'] . '</h6></a>
                                 <div class="d-flex justify-content-between align-items-center">
                                     <small class="text-muted">
-										<i class="far fa-calendar-alt"></i> ' . date($settings['date_format'], strtotime($row['date'])) . ', ' . $row['time'] . '
+										<i class="far fa-calendar-alt"></i> ' . date($settings['date_format'] . ' H:i', strtotime($row['created_at'])) . '
 									</small>
 									<small><i class="fas fa-comments"></i> 
                                         <a href="post?name=' . $row['slug'] . '#comments" class="blog-comments">

@@ -69,8 +69,7 @@ if (isset($_POST['send'])) {
     }
     $content = $_POST['text']; // Le htmlspecialchars sera fait à l'affichage
     
-    $date = date('d F Y'); // Note: Stocker en format Y-m-d est préférable
-    $time = date('H:i');
+    // MODIFICATION : Suppression de date & time
 	
 	$captcha = '';
     
@@ -88,9 +87,10 @@ if (isset($_POST['send'])) {
             if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 echo '<div class="alert alert-danger">The entered E-Mail Address is invalid.</div>';
             } else {
-                // Requête préparée pour l'insertion
-                $stmt = mysqli_prepare($connect, "INSERT INTO messages (name, email, content, date, time) VALUES(?, ?, ?, ?, ?)");
-                mysqli_stmt_bind_param($stmt, "sssss", $name, $email, $content, $date, $time);
+                // MODIFICATION : Mise à jour de la requête
+                $stmt = mysqli_prepare($connect, "INSERT INTO messages (name, email, content, created_at) VALUES(?, ?, ?, NOW())");
+                // MODIFICATION : Ajustement des paramètres
+                mysqli_stmt_bind_param($stmt, "sss", $name, $email, $content);
                 mysqli_stmt_execute($stmt);
                 mysqli_stmt_close($stmt);
                 

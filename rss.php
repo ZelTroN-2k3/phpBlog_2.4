@@ -17,16 +17,15 @@ while($post = mysqli_fetch_array($query)){
 	$title       = htmlspecialchars($post["title"]);
 	$link        = $settings['site_url'] . '/post?name=' . $post["slug"];
 	$description = short_text(strip_tags(html_entity_decode($post['content'])), 100);
-	$date        = $post["date"];
-	$time        = $post["time"];
+	// MODIFICATION : Utilisation de created_at et formatage RSS (RFC 2822)
+	$pubDate     = date('r', strtotime($post["created_at"]));
 	$guid        = $post["id"];
 	
 	echo "
 	<item>
 		<title>$title</title>
 		<link>$link</link>
-		<!-- <description>$description</description>-->
-		<pubDate>$date, $time</pubDate>
+		<pubDate>$pubDate</pubDate>
 		<guid isPermaLink=\"false\">$guid</guid>
 	</item>";
  }

@@ -56,7 +56,7 @@ echo '
 				<div class="d-flex justify-content-between align-items-center">
 					<small>
 						Posted by <b><i><i class="fas fa-user"></i> ' . post_author($row['author_id']) . '</i></b> 
-						on <b><i><i class="far fa-calendar-alt"></i> ' . date($settings['date_format'], strtotime($row['date'])) . ', ' . $row['time'] . '</i></b>
+						on <b><i><i class="far fa-calendar-alt"></i> ' . date($settings['date_format'] . ' H:i', strtotime($row['created_at'])) . '</i></b>
 					</small>
 					<small> 	
 						<i class="fa fa-eye"></i> ' . $row['views'] . '
@@ -89,6 +89,31 @@ echo '
                     }
                     echo '<hr />';
                 }
+                
+                // --- DÉBUT AFFICHAGE DES TAGS ---
+                $stmt_get_tags = mysqli_prepare($connect, "
+                    SELECT t.name, t.slug 
+                    FROM tags t
+                    JOIN post_tags pt ON t.id = pt.tag_id
+                    WHERE pt.post_id = ?
+                ");
+                mysqli_stmt_bind_param($stmt_get_tags, "i", $post_id);
+                mysqli_stmt_execute($stmt_get_tags);
+                $result_tags = mysqli_stmt_get_result($stmt_get_tags);
+                
+                if (mysqli_num_rows($result_tags) > 0) {
+                    echo '<h5><i class="fas fa-tags"></i> Tags</h5>';
+                    echo '<div class="mb-3">';
+                    while ($row_tag = mysqli_fetch_assoc($result_tags)) {
+                        echo '<a href="tag.php?name=' . htmlspecialchars($row_tag['slug']) . '" class="btn btn-outline-secondary btn-sm me-1 mb-1">
+                                <i class="fas fa-tag"></i> ' . htmlspecialchars($row_tag['name']) . '
+                              </a>';
+                    }
+                    echo '</div><hr />';
+                }
+                mysqli_stmt_close($stmt_get_tags);
+                // --- FIN AFFICHAGE DES TAGS ---
+                
                 echo '
 				<h5><i class="fas fa-share-alt-square"></i> Share</h5>
 				<div id="share" style="font-size: 14px;"></div>
@@ -101,73 +126,28 @@ echo '
 ?>
 
 <?php
-// Use prepared statement for selecting comments
-$stmt_comments = mysqli_prepare($connect, "SELECT * FROM comments WHERE post_id=? AND approved='Yes' ORDER BY id DESC");
-mysqli_stmt_bind_param($stmt_comments, "i", $row['id']);
-mysqli_stmt_execute($stmt_comments);
-$q = mysqli_stmt_get_result($stmt_comments);
-$count = mysqli_num_rows($q);
-mysqli_stmt_close($stmt_comments);
+// --- MODIFICATION : Remplacement de la boucle par la nouvelle fonction ---
 
-if ($count <= 0) {
+// 1. Récupérer le nombre total de commentaires principaux (parent_id = 0)
+$stmt_count_main = mysqli_prepare($connect, "SELECT COUNT(id) AS count FROM comments WHERE post_id=? AND approved='Yes' AND parent_id = 0");
+mysqli_stmt_bind_param($stmt_count_main, "i", $post_id);
+mysqli_stmt_execute($stmt_count_main);
+$q_count = mysqli_stmt_get_result($stmt_count_main);
+$count_row = mysqli_fetch_assoc($q_count);
+$count_main = $count_row['count'];
+mysqli_stmt_close($stmt_count_main);
+
+if ($count_main <= 0) {
     echo '<div class="alert alert-info">There are no comments yet.</div>';
 } else {
-    while ($comment = mysqli_fetch_array($q)) {
-        $aauthor_id = $comment['user_id'];
-        $aauthor_name = 'Guest';
-        
-        if ($comment['guest'] == 'Yes') {
-            $aavatar = 'assets/img/avatar.png';
-            $arole   = '<span class="badge bg-secondary">Guest</span>';
-        } else {
-            // Use prepared statement to get user info
-            $stmt_user = mysqli_prepare($connect, "SELECT * FROM `users` WHERE id=? LIMIT 1");
-            mysqli_stmt_bind_param($stmt_user, "i", $aauthor_id);
-            mysqli_stmt_execute($stmt_user);
-            $querych = mysqli_stmt_get_result($stmt_user);
-            
-            if (mysqli_num_rows($querych) > 0) {
-                $rowch = mysqli_fetch_assoc($querych);
-                $aavatar = $rowch['avatar'];
-                $aauthor_name = $rowch['username'];
-                if ($rowch['role'] == 'Admin') {
-                    $arole = '<span class="badge bg-danger">Administrator</span>';
-                } elseif ($rowch['role'] == 'Editor') {
-                    $arole = '<span class="badge bg-warning">Editor</span>';
-                } else {
-                    $arole = '<span class="badge bg-info">User</span>';
-                }
-            }
-            mysqli_stmt_close($stmt_user);
-        }
-        
-        echo '
-		<div class="row d-flex justify-content-center bg-white rounded border mt-3 mb-3 ms-1 me-1">
-			<div class="mb-2 d-flex flex-start align-items-center">
-				<img class="rounded-circle shadow-1-strong mt-1 me-3"
-					src="' . htmlspecialchars($aavatar) . '" alt="' . htmlspecialchars($aauthor_name) . '" 
-					width="50" height="50" />
-				<div class="mt-1 mb-1">
-					<h6 class="fw-bold mt-1 mb-1">
-						<i class="fa fa-user"></i> ' . htmlspecialchars($aauthor_name) . ' ' . $arole . '
-					</h6>
-					<p class="small mb-0">
-						<i><i class="fas fa-calendar"></i> ' . date($settings['date_format'], strtotime($comment['date'])) . ', ' . $comment['time'] . '</i>
-					</p>
-				</div>
-			</div>
-			<hr class="my-0" />
-			<p class="mt-1 mb-1 pb-1">
-				' . emoticons(htmlspecialchars($comment['comment'])) . '
-			</p>
-		</div>
-	';
-    }
+    // 2. Appeler la fonction récursive pour afficher tous les commentaires (en commençant par les parents)
+    display_comments($post_id, 0, 0);
 }
+// --- FIN MODIFICATION ---
 ?>                                  
-                    <h5 class="mt-4">Leave A Comment</h5>
-
-
+                    
+                    <div id="comment-form-container" class="mt-4"> 
+                        <h5 class="leave-comment-title">Leave A Comment</h5>
 <?php
 $guest = 'No';
 
@@ -182,9 +162,12 @@ if ($logged == 'Yes') {
 
 if ($cancomment == 'Yes') {
 ?>
-                        <form name="comment_form" action="post?name=<?php
+                        <form name="comment_form" id="main-comment-form" action="post?name=<?php
     echo $post_slug;
 ?>" method="post">
+                            
+                            <input type="hidden" name="parent_id" id="parent_id" value="0">
+                            
 <?php
     if ($logged == 'No') {
         $guest = 'Yes';
@@ -211,19 +194,23 @@ if ($cancomment == 'Yes') {
     }
 ?>
                         <input type="submit" name="post" class="btn btn-primary col-12" value="Post" />
+                        <button type="button" class="btn btn-secondary col-12 mt-2" id="cancel-reply-btn" style="display:none;" onclick="cancelReply()">
+                            Annuler la réponse
+                        </button>
             </form>
 <?php
 } else {
     echo '<div class="alert alert-info">Please <strong><a href="login"><i class="fas fa-sign-in-alt"></i> Sign In</a></strong> to be able to post a comment.</div>';
 }
-
+?>
+                    </div> <?php
 if ($cancomment == 'Yes') {
     if (isset($_POST['post'])) {
         
         $authname_problem = 'No';
-        $date             = date($settings['date_format']);
-        $time             = date('H:i');
 		$comment          = $_POST['comment'];
+		// MODIFICATION : Récupérer le parent_id
+		$parent_id        = (int)$_POST['parent_id']; 
 		
 		$captcha = '';
 		
@@ -256,9 +243,10 @@ if ($cancomment == 'Yes') {
             echo '<div class="alert alert-danger">Your comment is too short.</div>';
         } else {
             if ($authname_problem == 'No' AND $bot == 'No') {
-                // Use prepared statement for INSERT
-                $stmt = mysqli_prepare($connect, "INSERT INTO `comments` (`post_id`, `comment`, `user_id`, `date`, `time`, `guest`) VALUES (?, ?, ?, ?, ?, ?)");
-                mysqli_stmt_bind_param($stmt, "isssss", $row['id'], $comment, $author, $date, $time, $guest);
+                // MODIFICATION : Mise à jour de la requête pour inclure parent_id
+                $stmt = mysqli_prepare($connect, "INSERT INTO `comments` (`post_id`, `parent_id`, `comment`, `user_id`, `guest`, `created_at`) VALUES (?, ?, ?, ?, ?, NOW())");
+                // MODIFICATION : Ajustement des paramètres
+                mysqli_stmt_bind_param($stmt, "iisss", $row['id'], $parent_id, $comment, $author, $guest);
                 mysqli_stmt_execute($stmt);
                 mysqli_stmt_close($stmt);
 
@@ -288,11 +276,55 @@ $("#share").jsSocials({
 
 function countText() {
 	let text = document.comment_form.comment.value;
-	
 	document.getElementById('characters').innerText = 1000 - text.length;
-	//document.getElementById('words').innerText = text.length == 0 ? 0 : text.split(/\s+/).length;
-	//document.getElementById('rows').innerText = text.length == 0 ? 0 : text.split(/\n/).length;
 }
+
+// --- NOUVEAU SCRIPT POUR LES RÉPONSES ---
+// Références aux éléments du formulaire
+const formContainer = document.getElementById('comment-form-container');
+const mainForm = document.getElementById('main-comment-form');
+const parentIdInput = document.getElementById('parent_id');
+const cancelBtn = document.getElementById('cancel-reply-btn');
+const formTitle = formContainer.querySelector('h5.leave-comment-title');
+
+// Emplacement d'origine du formulaire
+const originalFormParent = formContainer.parentNode;
+
+function replyToComment(commentId) {
+    // 1. Trouver le conteneur du commentaire auquel on répond
+    const commentElement = document.getElementById('comment-' + commentId);
+    if (!commentElement) return;
+
+    // 2. Déplacer le formulaire sous ce commentaire
+    commentElement.appendChild(formContainer);
+
+    // 3. Mettre à jour la valeur du parent_id
+    parentIdInput.value = commentId;
+
+    // 4. Afficher le bouton "Annuler"
+    cancelBtn.style.display = 'block';
+    
+    // 5. Changer le titre du formulaire
+    formTitle.innerText = 'Replying to comment #' + commentId;
+    
+    // 6. Mettre le focus sur la zone de texte
+    document.getElementById('comment').focus();
+}
+
+function cancelReply() {
+    // 1. Remettre le formulaire à sa place d'origine
+    originalFormParent.appendChild(formContainer);
+
+    // 2. Réinitialiser la valeur du parent_id
+    parentIdInput.value = '0';
+
+    // 3. Cacher le bouton "Annuler"
+    cancelBtn.style.display = 'none';
+    
+    // 4. Réinitialiser le titre
+    formTitle.innerText = 'Leave A Comment';
+}
+// --- FIN NOUVEAU SCRIPT ---
 </script>
 <?php
 if ($settings['sidebar_position'] == 'Right') {

@@ -66,7 +66,7 @@ if ($count <= 0) {
 										<div class="d-flex justify-content-between align-items-center mb-3">
 											<small>
 												Posted by <b><i><i class="fas fa-user"></i> ' . post_author($row['author_id']) . '</i></b>
-												on <b><i><i class="far fa-calendar-alt"></i> ' . date($settings['date_format'], strtotime($row['date'])) . ', ' . $row['time'] . '</i></b>
+												on <b><i><i class="far fa-calendar-alt"></i> ' . date($settings['date_format'] . ' H:i', strtotime($row['created_at'])) . '</i></b>
 											</small>
 											<small class="float-end"><i class="fas fa-comments"></i>
 												<a href="post?name=' . $row['slug'] . '#comments" class="blog-comments"><b>' . post_commentscount($row['id']) . '</b></a>

@@ -122,6 +122,135 @@ function emoticons($text)
     return strtr($text, $icons);
 }
 
+function format_comment_with_code($text)
+{
+    // 1. Protéger les blocs de code dans un tableau temporaire.
+    $code_blocks = [];
+    $i = 0;
+
+    // 2. Remplacer [code=lang]...[/code] par un placeholder
+    // (Ex: [code=php]...[/code])
+    $text = preg_replace_callback(
+        '/\[code=([a-zA-Z0-9_-]+)\](.*?)\[\/code\]/s',
+        function ($matches) use (&$code_blocks, &$i) {
+            $lang = htmlspecialchars($matches[1]); // Sécurise la classe de langue
+            $code_content = htmlspecialchars($matches[2]); // Échappe le code à l'intérieur
+            $placeholder = "---CODEBLOCK{$i}---";
+            // Crée le bloc HTML final
+            $code_blocks[$placeholder] = '<pre><code class="language-' . $lang . '">' . $code_content . '</code></pre>';
+            $i++;
+            return $placeholder;
+        },
+        $text
+    );
+
+    // 3. Remplacer [code]...[/code] (sans langue spécifiée) par un placeholder
+    $text = preg_replace_callback(
+        '/\[code\](.*?)\[\/code\]/s',
+        function ($matches) use (&$code_blocks, &$i) {
+            $code_content = htmlspecialchars($matches[1]); // Échappe le code
+            $placeholder = "---CODEBLOCK{$i}---";
+            $code_blocks[$placeholder] = '<pre><code>' . $code_content . '</code></pre>';
+            $i++;
+            return $placeholder;
+        },
+        $text
+    );
+
+    // 4. Maintenant que le code est protégé, on sécurise TOUT le reste.
+    $text = htmlspecialchars($text); // Sécurise tout autre HTML (ex: <script>)
+    $text = emoticons($text);      // Applique les émoticônes sur le texte normal
+    $text = nl2br($text);           // Ajoute les sauts de ligne <br> au texte normal
+
+    // 5. Ré-injecter les blocs de code (qui sont déjà formatés et sécurisés)
+    if (!empty($code_blocks)) {
+        $text = str_replace(array_keys($code_blocks), array_values($code_blocks), $text);
+    }
+
+    return $text;
+}
+
+// --- NOUVELLE FONCTION POUR LES COMMENTAIRES ---
+function display_comments($post_id, $parent_id = 0, $level = 0) {
+    global $connect, $settings, $logged, $rowu; // Rendre les variables globales accessibles
+
+    // Ajuster la marge pour l'indentation
+    // Limiter la profondeur pour éviter les abus (max 5 niveaux)
+    $margin_left = ($level > 5) ? (5 * 30) : ($level * 30); // 30px par niveau
+
+    $stmt_comments = mysqli_prepare($connect, "SELECT * FROM comments WHERE post_id=? AND parent_id = ? AND approved='Yes' ORDER BY created_at ASC");
+    mysqli_stmt_bind_param($stmt_comments, "ii", $post_id, $parent_id);
+    mysqli_stmt_execute($stmt_comments);
+    $q = mysqli_stmt_get_result($stmt_comments);
+    
+    while ($comment = mysqli_fetch_array($q)) {
+        // --- Bloc d'affichage d'un commentaire (copié de post.php) ---
+        $aauthor_id = $comment['user_id'];
+        $aauthor_name = 'Guest';
+        
+        if ($comment['guest'] == 'Yes') {
+            $aavatar = 'assets/img/avatar.png';
+            $arole   = '<span class="badge bg-secondary">Guest</span>';
+        } else {
+            // Utiliser une requête préparée pour obtenir les infos de l'utilisateur
+            $stmt_user = mysqli_prepare($connect, "SELECT * FROM `users` WHERE id=? LIMIT 1");
+            mysqli_stmt_bind_param($stmt_user, "i", $aauthor_id);
+            mysqli_stmt_execute($stmt_user);
+            $querych = mysqli_stmt_get_result($stmt_user);
+            
+            if (mysqli_num_rows($querych) > 0) {
+                $rowch = mysqli_fetch_assoc($querych);
+                $aavatar = $rowch['avatar'];
+                $aauthor_name = $rowch['username'];
+                if ($rowch['role'] == 'Admin') {
+                    $arole = '<span class="badge bg-danger">Administrator</span>';
+                } elseif ($rowch['role'] == 'Editor') {
+                    $arole = '<span class="badge bg-warning">Editor</span>';
+                } else {
+                    $arole = '<span class="badge bg-info">User</span>';
+                }
+            }
+            mysqli_stmt_close($stmt_user);
+        }
+        
+        echo '
+        <div class="comment-container" style="margin-left: ' . $margin_left . 'px;" id="comment-' . $comment['id'] . '">
+            <div class="row d-flex justify-content-center bg-white rounded border mt-3 mb-3 ms-1 me-1">
+                <div class="mb-2 d-flex flex-start align-items-center">
+                    <img class="rounded-circle shadow-1-strong mt-1 me-3"
+                        src="' . htmlspecialchars($aavatar) . '" alt="' . htmlspecialchars($aauthor_name) . '" 
+                        width="50" height="50" />
+                    <div class="mt-1 mb-1">
+                        <h6 class="fw-bold mt-1 mb-1">
+                            <i class="fa fa-user"></i> ' . htmlspecialchars($aauthor_name) . ' ' . $arole . '
+                        </h6>
+                        <p class="small mb-0">
+                            <i><i class="fas fa-calendar"></i> ' . date($settings['date_format'] . ' H:i', strtotime($comment['created_at'])) . '</i>
+                        </p>
+                    </div>
+                </div>
+                <hr class="my-0" />
+                <p class="mt-1 mb-1 pb-1">
+                    ' . format_comment_with_code($comment['comment']) . '
+                </p>
+                <hr class="my-0" />
+                <div class="p-2">
+                    <button class="btn btn-sm btn-link" onclick="replyToComment(' . $comment['id'] . ')">
+                        <i class="fas fa-reply"></i> Répondre
+                    </button>
+                </div>
+            </div>
+        </div>
+        ';
+        // --- Fin du bloc d'affichage ---
+        
+        // Appel récursif pour afficher les enfants de ce commentaire
+        display_comments($post_id, $comment['id'], $level + 1);
+    }
+    mysqli_stmt_close($stmt_comments);
+}
+// --- FIN NOUVELLE FONCTION ---
+
 function post_author($author_id)
 {
     // Rendre $connect accessible (meilleure pratique : passer $connect en paramètre)
@@ -384,7 +513,34 @@ function head()
         
         $pagetitle   = $rowct['category'];
 		$description = 'View all blog posts from ' . $rowct['category'] . ' category.';
+    
+    // MODIFICATION : Ajout de la page Tag
+    } else if ($current_page == 'tag.php') {
+        $slug = $_GET['name'] ?? '';
+        
+        if (empty($slug)) {
+            echo '<meta http-equiv="refresh" content="0; url=blog">';
+            exit;
+        }
+        
+        // Requête préparée
+        $stmt_tag_seo = mysqli_prepare($connect, "SELECT name FROM `tags` WHERE slug=?");
+        mysqli_stmt_bind_param($stmt_tag_seo, "s", $slug);
+        mysqli_stmt_execute($stmt_tag_seo);
+        $runtag = mysqli_stmt_get_result($stmt_tag_seo);
+        
+        if (mysqli_num_rows($runtag) == 0) {
+            mysqli_stmt_close($stmt_tag_seo);
+            echo '<meta http-equiv="refresh" content="0; url=blog">';
+            exit;
+        }
+        $rowtag = mysqli_fetch_assoc($runtag);
+        mysqli_stmt_close($stmt_tag_seo);
+        
+        $pagetitle   = 'Articles tagués : ' . $rowtag['name'];
+		$description = 'Voir tous les articles avec le tag ' . $rowtag['name'];
     }
+    // FIN MODIFICATION
     
     // Utiliser htmlspecialchars pour le titre et la description
     if ($current_page == 'index.php') {
@@ -426,6 +582,23 @@ if ($current_page == 'post.php') {
         <link type="text/css" rel="stylesheet" href="https://cdn.jsdelivr.net/jquery.jssocials/1.5.0/jssocials-theme-classic.css" />
         <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery.jssocials/1.5.0/jssocials.min.js"></script>
 <?php
+}
+?>
+<?php
+if ($current_page == 'post.php' || $current_page == 'tag.php') { // MODIF : Ajout de tag.php
+?>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/php.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/javascript.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/css.min.js"></script>
+        <script>
+            // Initialise la coloration après le chargement de la page
+            document.addEventListener('DOMContentLoaded', (event) => {
+                hljs.highlightAll();
+            });
+        </script>
+        <?php
 }
 ?>
 	
@@ -646,7 +819,7 @@ if ($settings['layout'] == 'Wide') {
 			
             echo '	<li class="nav-item link-body-emphasis dropdown">
 						<a href="blog" class="nav-link link-dark dropdown-toggle px-2';
-            if ($current_page == 'blog.php' || $current_page == 'category.php') {
+            if ($current_page == 'blog.php' || $current_page == 'category.php' || $current_page == 'tag.php') {
                 echo ' active';
             }
             // Utiliser htmlspecialchars pour les icônes et le texte
@@ -702,13 +875,13 @@ if ($settings['layout'] == 'Wide') {
 <?php
     } else {
 ?>
-                    <li class="nav-item dropdown">
+					<li class="nav-item dropdown">
 						<a href="#" class="nav-link link-dark dropdown-toggle d-flex align-items-center" data-bs-toggle="dropdown">
 							<img src="<?php echo htmlspecialchars($rowu['avatar']); ?>" alt="Avatar" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; margin-right: 5px;">
 							Profile <span class="caret"></span>
 						</a>
 						<ul class="dropdown-menu">
-					<li>
+							<li>
 								<a class="dropdown-item <?php
 if ($current_page == 'my-comments.php') {
 	echo ' active';
@@ -853,6 +1026,43 @@ function sidebar() {
 				</div>
 				
 				<div class="card mt-3">
+					<div class="card-header"><i class="fas fa-tags"></i> Popular Tags</div>
+					<div class="card-body">
+						<div class="d-flex flex-wrap">
+<?php
+    // Requête pour récupérer les tags les plus utilisés
+    $stmt_tags = mysqli_prepare($connect, "
+        SELECT 
+            t.name, t.slug, COUNT(pt.tag_id) AS tag_count
+        FROM tags t
+        JOIN post_tags pt ON t.id = pt.tag_id
+        JOIN posts p ON pt.post_id = p.id
+        WHERE p.active = 'Yes'
+        GROUP BY pt.tag_id
+        ORDER BY tag_count DESC, t.name ASC
+        LIMIT 15
+    ");
+    mysqli_stmt_execute($stmt_tags);
+    $result_tags = mysqli_stmt_get_result($stmt_tags);
+
+    if (mysqli_num_rows($result_tags) == 0) {
+        echo '<div class="alert alert-info p-2">No tags found.</div>';
+    } else {
+        while ($row_tag = mysqli_fetch_assoc($result_tags)) {
+            echo '
+                <a href="tag.php?name=' . htmlspecialchars($row_tag['slug']) . '" class="btn btn-outline-secondary btn-sm m-1">
+                    <i class="fas fa-tag"></i> ' . htmlspecialchars($row_tag['name']) . '
+                    <span class="badge bg-dark ms-1">' . $row_tag['tag_count'] . '</span>
+                </a>
+            ';
+        }
+    }
+    mysqli_stmt_close($stmt_tags);
+?>
+						</div>
+					</div>
+				</div>
+				<div class="card mt-3">
 					<div class="card-header">
 						<ul class="nav nav-tabs card-header-tabs nav-justified">
 							<li class="nav-item active">
@@ -901,7 +1111,7 @@ function sidebar() {
 											<a href="post?name=' . htmlspecialchars($row['slug']) . '">' . htmlspecialchars($row['title']) . '</a>
 										</h6>
 										<p class="text-muted small mb-0">
-											<i class="fas fa-calendar"></i> ' . date($settings['date_format'], strtotime($row['date'])) . ', ' . $row['time'] . '<br />
+											<i class="fas fa-calendar"></i> ' . date($settings['date_format'], strtotime($row['created_at'])) . '<br />
                                             <i class="fa fa-comments"></i> Comments: 
 												<a href="post?name=' . htmlspecialchars($row['slug']) . '#comments">
 													<b>' . post_commentscount($row['id']) . '</b>
@@ -969,7 +1179,7 @@ function sidebar() {
 										</h6>
 										<p class="text-muted small mb-0">
 											on <a href="post?name=' . htmlspecialchars($row2['slug']) . '#comments">' . htmlspecialchars($row2['title']) . '</a><br />
-											<i class="fas fa-calendar"></i> ' . date($settings['date_format'], strtotime($row['date'])) . ', ' . $row['time'] . '
+											<i class="fas fa-calendar"></i> ' . date($settings['date_format'] . ' H:i', strtotime($row['created_at'])) . '
 										</p>
 									</div>
 								</div>
@@ -1130,7 +1340,7 @@ while ($row = mysqli_fetch_assoc($run)) {
 						<a href="<?php
         echo htmlspecialchars($settings['linkedin']);
 ?>" target="_blank" class="btn btn-primary">
-							<strong><i class="fab fa-linkedin"></i>&nbsp; LinkedIn</strong></a>
+							<strong><i class.="fab fa-linkedin"></i>&nbsp; LinkedIn</strong></a>
 <?php
     }
 ?>    
