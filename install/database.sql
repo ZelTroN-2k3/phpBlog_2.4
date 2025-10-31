@@ -115,6 +115,9 @@ INSERT INTO `pages` (`id`, `title`, `slug`, `content`) VALUES
 
 -- --------------------------------------------------------
 
+--
+-- ICI EST LA MODIFICATION
+--
 CREATE TABLE IF NOT EXISTS `posts` (
   `id` int(11) NOT NULL,
   `category_id` int(11) NOT NULL,
@@ -127,6 +130,8 @@ CREATE TABLE IF NOT EXISTS `posts` (
   `time` varchar(5) COLLATE utf8mb4_unicode_ci NOT NULL,
   `active` varchar(3) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Yes',
   `featured` varchar(3) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'No',
+  `download_link` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `github_link` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `views` int(11) NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

@@ -168,15 +168,15 @@ function generateSeoURL($string, $random_numbers = 1, $wordLimit = 8) {
       text-decoration: none;
     }
     
-	body {
-	  font-size: .875rem;
-	}
+    body {
+      font-size: .875rem;
+    }
 
-	.feather {
-	  width: 16px;
-	  height: 16px;
-	  vertical-align: text-bottom;
-	}
+    .feather {
+      width: 16px;
+      height: 16px;
+      vertical-align: text-bottom;
+    }
 
 	.sidebar {
 	  position: fixed;
@@ -239,6 +239,13 @@ function generateSeoURL($string, $random_numbers = 1, $wordLimit = 8) {
 	.navbar .navbar-toggler {
 	  top: .25rem;
 	  right: 1rem;
+	}
+
+.dashboard-member-activity-avatar {
+	  width: 64px;
+	  height: 64px;
+	  border-radius: 40%; /* Pour un affichage arrondi */
+	  object-fit: cover;  /* Pour éviter la déformation de l'image */
 	}
     </style>
 

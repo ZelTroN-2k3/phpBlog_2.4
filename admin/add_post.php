@@ -11,6 +11,10 @@ if (isset($_POST['add'])) {
     $date        = date($settings['date_format']);
     $time        = date('H:i');
     
+    // NOUVEAUX CHAMPS
+    $download_link = $_POST['download_link'];
+    $github_link   = $_POST['github_link'];
+    
     $author_id = null;
     $author    = $uname;
     
@@ -58,9 +62,9 @@ if (isset($_POST['add'])) {
     }
     
     if ($author_id) {
-        // Use prepared statement for INSERT
-        $stmt = mysqli_prepare($connect, "INSERT INTO `posts` (category_id, title, slug, author_id, image, content, date, time, active, featured) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        mysqli_stmt_bind_param($stmt, "ississssss", $category_id, $title, $slug, $author_id, $image, $content, $date, $time, $active, $featured);
+        // Use prepared statement for INSERT - MISE À JOUR
+        $stmt = mysqli_prepare($connect, "INSERT INTO `posts` (category_id, title, slug, author_id, image, content, date, time, active, featured, download_link, github_link) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        mysqli_stmt_bind_param($stmt, "ississssssss", $category_id, $title, $slug, $author_id, $image, $content, $date, $time, $active, $featured, $download_link, $github_link);
         mysqli_stmt_execute($stmt);
         $post_id = mysqli_insert_id($connect); // Get the new post ID
         mysqli_stmt_close($stmt);
@@ -146,6 +150,21 @@ while ($rw = mysqli_fetch_assoc($crun)) {
 }
 ?>
 						</select>
+					</p>
+					
+					<p>
+						<label>Lien de téléchargement (.rar, .zip)</label>
+						<div class="input-group">
+							<span class="input-group-text"><i class="fas fa-file-archive"></i></span>
+							<input class="form-control" name="download_link" value="" type="url" placeholder="https://.../file.zip">
+						</div>
+					</p>
+					<p>
+						<label>Lien GitHub</label>
+						<div class="input-group">
+							<span class="input-group-text"><i class="fab fa-github"></i></span>
+							<input class="form-control" name="github_link" value="" type="url" placeholder="https://github.com/user/repo">
+						</div>
 					</p>
 					<p>
 						<label>Content</label>

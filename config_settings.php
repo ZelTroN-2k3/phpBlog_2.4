@@ -1,8 +1,8 @@
 <?php $settings = array (
-  'site_url' => 'http://localhost/phpblog',
+  'site_url' => 'http://localhost/phpBlog_v2.4',
   'sitename' => 'phpBlog',
   'description' => 'Content Management System',
-  'email' => 'admin@mail.com',
+  'email' => 'zeltron2K3@gmail.com',
   'gcaptcha_sitekey' => '',
   'gcaptcha_secretkey' => '',
   'head_customcode' => '',

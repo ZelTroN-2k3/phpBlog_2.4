@@ -70,6 +70,26 @@ echo '
                 ' . html_entity_decode($row['content']) . '
 				<hr />
 				
+				';
+                if (!empty($row['download_link']) || !empty($row['github_link'])) {
+                    echo '<h5><i class="fas fa-download"></i> Téléchargements</h5>';
+                    
+                    if (!empty($row['download_link'])) {
+                        echo '
+                        <a href="' . htmlspecialchars($row['download_link']) . '" class="btn btn-primary me-2 mb-2" target="_blank" rel="noopener noreferrer">
+                            <i class="fas fa-file-archive"></i> Télécharger (.zip/.rar)
+                        </a>';
+                    }
+                    
+                    if (!empty($row['github_link'])) {
+                        echo '
+                        <a href="' . htmlspecialchars($row['github_link']) . '" class="btn btn-dark me-2 mb-2" target="_blank" rel="noopener noreferrer">
+                            <i class="fab fa-github"></i> Voir sur GitHub
+                        </a>';
+                    }
+                    echo '<hr />';
+                }
+                echo '
 				<h5><i class="fas fa-share-alt-square"></i> Share</h5>
 				<div id="share" style="font-size: 14px;"></div>
 				<hr />

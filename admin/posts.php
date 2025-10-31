@@ -46,6 +46,10 @@ if (isset($_GET['edit-id'])) {
         $category_id = $_POST['category_id'];
         $content     = htmlspecialchars($_POST['content']);
         
+        // NOUVEAUX CHAMPS
+        $download_link = $_POST['download_link'];
+        $github_link   = $_POST['github_link'];
+        
         $date        = date($settings['date_format']);
         $time        = date('H:i');
         
@@ -80,9 +84,9 @@ if (isset($_GET['edit-id'])) {
             }
         }
         
-        // Use prepared statement for UPDATE
-        $stmt = mysqli_prepare($connect, "UPDATE posts SET title=?, slug=?, image=?, active=?, featured=?, date=?, time=?, category_id=?, content=? WHERE id=?");
-        mysqli_stmt_bind_param($stmt, "sssssssssi", $title, $slug, $image, $active, $featured, $date, $time, $category_id, $content, $id);
+        // Use prepared statement for UPDATE - MISE À JOUR
+        $stmt = mysqli_prepare($connect, "UPDATE posts SET title=?, slug=?, image=?, active=?, featured=?, date=?, time=?, category_id=?, content=?, download_link=?, github_link=? WHERE id=?");
+        mysqli_stmt_bind_param($stmt, "sssssssssssi", $title, $slug, $image, $active, $featured, $date, $time, $category_id, $content, $download_link, $github_link, $id);
         mysqli_stmt_execute($stmt);
         mysqli_stmt_close($stmt);
 
@@ -161,6 +165,21 @@ while ($rw = mysqli_fetch_assoc($crun)) {
 }
 ?>
 					</select>
+				</p>
+				
+				<p>
+					<label>Lien de téléchargement (.rar, .zip)</label>
+					<div class="input-group">
+						<span class="input-group-text"><i class="fas fa-file-archive"></i></span>
+						<input class="form-control" name="download_link" value="<?php echo htmlspecialchars($row['download_link']); ?>" type="url" placeholder="https://.../file.zip">
+					</div>
+				</p>
+				<p>
+					<label>Lien GitHub</label>
+					<div class="input-group">
+						<span class="input-group-text"><i class="fab fa-github"></i></span>
+						<input class="form-control" name="github_link" value="<?php echo htmlspecialchars($row['github_link']); ?>" type="url" placeholder="https://github.com/user/repo">
+					</div>
 				</p>
 				<p>
 					<label>Content</label>
