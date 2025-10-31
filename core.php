@@ -187,10 +187,12 @@ function display_comments($post_id, $parent_id = 0, $level = 0) {
         // --- Bloc d'affichage d'un commentaire (copié de post.php) ---
         $aauthor_id = $comment['user_id'];
         $aauthor_name = 'Guest';
+        $comment_badge = ''; // Initialiser le badge
         
         if ($comment['guest'] == 'Yes') {
             $aavatar = 'assets/img/avatar.png';
             $arole   = '<span class="badge bg-secondary">Guest</span>';
+            $aauthor_name = htmlspecialchars($comment['user_id']); // Nom de l'invité
         } else {
             // Utiliser une requête préparée pour obtenir les infos de l'utilisateur
             $stmt_user = mysqli_prepare($connect, "SELECT * FROM `users` WHERE id=? LIMIT 1");
@@ -209,6 +211,12 @@ function display_comments($post_id, $parent_id = 0, $level = 0) {
                 } else {
                     $arole = '<span class="badge bg-info">User</span>';
                 }
+                
+                // --- NOUVELLE LIGNE ---
+                // Appeler la fonction de badge UNIQUEMENT pour les utilisateurs enregistrés
+                $comment_badge = get_user_comment_badge($aauthor_id);
+                // --- FIN NOUVELLE LIGNE ---
+                
             }
             mysqli_stmt_close($stmt_user);
         }
@@ -222,8 +230,7 @@ function display_comments($post_id, $parent_id = 0, $level = 0) {
                         width="50" height="50" />
                     <div class="mt-1 mb-1">
                         <h6 class="fw-bold mt-1 mb-1">
-                            <i class="fa fa-user"></i> ' . htmlspecialchars($aauthor_name) . ' ' . $arole . '
-                        </h6>
+                            <i class="fa fa-user"></i> ' . htmlspecialchars($aauthor_name) . ' ' . $arole . ' ' . $comment_badge . ' </h6>
                         <p class="small mb-0">
                             <i><i class="fas fa-calendar"></i> ' . date($settings['date_format'] . ' H:i', strtotime($comment['created_at'])) . '</i>
                         </p>
@@ -281,11 +288,15 @@ function render_comment_html($comment_id, $margin_left = 0) {
 
     // 2. Récupérer les infos de l'auteur
     $aauthor_id = $comment['user_id'];
+// 2. Récupérer les infos de l'auteur
+    $aauthor_id = $comment['user_id'];
     $aauthor_name = 'Guest';
+    $comment_badge = ''; // Initialiser le badge
     
     if ($comment['guest'] == 'Yes') {
         $aavatar = 'assets/img/avatar.png';
         $arole   = '<span class="badge bg-secondary">Guest</span>';
+        $aauthor_name = htmlspecialchars($comment['user_id']); // Nom de l'invité
     } else {
         $stmt_user = mysqli_prepare($connect, "SELECT * FROM `users` WHERE id=? LIMIT 1");
         mysqli_stmt_bind_param($stmt_user, "i", $aauthor_id);
@@ -303,6 +314,11 @@ function render_comment_html($comment_id, $margin_left = 0) {
             } else {
                 $arole = '<span class="badge bg-info">User</span>';
             }
+            
+            // --- NOUVELLE LIGNE ---
+            // Appeler la fonction de badge UNIQUEMENT pour les utilisateurs enregistrés
+            $comment_badge = get_user_comment_badge($aauthor_id);
+            // --- FIN NOUVELLE LIGNE ---
         }
         mysqli_stmt_close($stmt_user);
     }
@@ -318,8 +334,7 @@ function render_comment_html($comment_id, $margin_left = 0) {
                     width="50" height="50" />
                 <div class="mt-1 mb-1">
                     <h6 class="fw-bold mt-1 mb-1">
-                        <i class="fa fa-user"></i> <?php echo htmlspecialchars($aauthor_name); ?> <?php echo $arole; ?>
-                    </h6>
+                        <i class="fa fa-user"></i> <?php echo htmlspecialchars($aauthor_name); ?> <?php echo $arole; ?> <?php echo $comment_badge; ?> </h6>
                     <p class="small mb-0">
                         <i><i class="fas fa-calendar"></i> <?php echo date($settings['date_format'] . ' H:i', strtotime($comment['created_at'])); ?></i>
                     </p>
@@ -358,7 +373,8 @@ function post_author($author_id)
     // Rendre $connect accessible (meilleure pratique : passer $connect en paramètre)
     global $connect; 
     
-    $author = '-';
+    $author_name = '-';
+    $author_username = ''; // Pour le lien
     
     $stmt = mysqli_prepare($connect, "SELECT username FROM `users` WHERE id=? LIMIT 1");
     mysqli_stmt_bind_param($stmt, "i", $author_id);
@@ -366,11 +382,17 @@ function post_author($author_id)
     $result = mysqli_stmt_get_result($stmt);
 
     if ($rowauthp = mysqli_fetch_assoc($result)) {
-        $author   = $rowauthp['username'];
+        $author_name   = $rowauthp['username'];
+        $author_username = $rowauthp['username']; // Stocker le nom d'utilisateur brut pour l'URL
     }
     mysqli_stmt_close($stmt);
  
-    return $author;
+    // MODIFICATION : Retourner un lien HTML au lieu d'un simple texte
+    if ($author_username) {
+        return '<a href="author.php?username=' . urlencode($author_username) . '">' . htmlspecialchars($author_name) . '</a>';
+    } else {
+        return htmlspecialchars($author_name); // Retourner le nom simple si l'auteur n'est pas trouvé
+    }
 }
 
 function post_title($post_id)
@@ -504,6 +526,58 @@ function check_user_has_liked($post_id)
     mysqli_stmt_close($stmt);
     
     return $has_liked;
+}
+
+// Récupère un badge HTML basé sur le nombre de commentaires d'un utilisateur.
+function get_user_comment_badge($user_id)
+{
+    global $connect;
+    
+    // 1. Compter les commentaires approuvés de l'utilisateur
+    $count = 0;
+    $stmt_count = mysqli_prepare($connect, "SELECT COUNT(id) AS count FROM comments WHERE user_id = ? AND guest = 'No' AND approved = 'Yes'");
+    mysqli_stmt_bind_param($stmt_count, "i", $user_id);
+    mysqli_stmt_execute($stmt_count);
+    $result = mysqli_stmt_get_result($stmt_count);
+    
+    if ($row = mysqli_fetch_assoc($result)) {
+        $count = (int)$row['count'];
+    }
+    mysqli_stmt_close($stmt_count);
+
+    // 2. Définir les seuils et les badges
+    if ($count >= 50) {
+        return '<span class="badge bg-warning text-dark ms-1"><i class="fas fa-star"></i> Vétéran</span>';
+    } elseif ($count >= 20) {
+        return '<span class="badge bg-success ms-1"><i class="fas fa-comments"></i> Fidèle</span>';
+    } elseif ($count >= 5) {
+        return '<span class="badge bg-info ms-1"><i class="fas fa-comment-dots"></i> Actif</span>';
+    } elseif ($count >= 1) {
+        return '<span class="badge bg-secondary ms-1"><i class="fas fa-comment"></i> Pipelette</span>';
+    }
+
+    return ''; // Pas de badge si 0 commentaire
+}
+
+
+// Calcule le temps de lecture estimé pour un texte.
+function get_reading_time($content, $wpm = 200) {
+    // 1. Supprimer le HTML
+    $text = strip_tags(html_entity_decode($content));
+    
+    // 2. Compter les mots
+    $word_count = str_word_count($text);
+    
+    // 3. Calculer le temps
+    $minutes = ceil($word_count / $wpm);
+    
+    // 4. Gérer le cas de "0 minute" (articles très courts)
+    if ($minutes < 1) {
+        $minutes = 1;
+    }
+    
+    // 5. Retourner la chaîne formatée
+    return '<i class="far fa-clock"></i> Lecture : ' . $minutes . ' min';
 }
 
 function head()
@@ -1019,7 +1093,16 @@ if ($settings['layout'] == 'Wide') {
 							<img src="<?php echo htmlspecialchars($rowu['avatar']); ?>" alt="Avatar" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; margin-right: 5px;">
 							Profile <span class="caret"></span>
 						</a>
-						<ul class="dropdown-menu">
+                            <ul class="dropdown-menu">
+							<li>
+								<a class="dropdown-item <?php
+if ($current_page == 'my-favorites.php') { 
+	echo ' active';
+}
+?>" href="my-favorites.php"> 
+                                    <i class="fa fa-bookmark"></i> Mes Favoris
+								</a>
+							</li>
 							<li>
 								<a class="dropdown-item <?php
 if ($current_page == 'my-comments.php') {

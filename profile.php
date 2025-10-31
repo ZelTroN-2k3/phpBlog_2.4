@@ -25,6 +25,12 @@ if (isset($_POST['save'])) {
     $avatar   = $rowu['avatar'];
     $password = $_POST['password']; // C'est le mot de passe en clair
     
+    // NOUVEAU : Récupérer la biographie
+    // Utiliser htmlspecialchars pour un encodage simple, 
+    // ou une bibliothèque comme HTMLPurifier pour autoriser du HTML sécurisé.
+    // Restons simple pour l'instant :
+    $bio      = htmlspecialchars($_POST['bio']); 
+    
     $emused = 'No';
     
     // Use prepared statement for email check
@@ -72,15 +78,17 @@ if (isset($_POST['save'])) {
         if ($password != null) {
             // MODIFICATION : Utiliser password_hash()
             $password_hashed = password_hash($password, PASSWORD_DEFAULT);
-            // Use prepared statement for UPDATE with password
-            $stmt = mysqli_prepare($connect, "UPDATE `users` SET email=?, username=?, avatar=?, password=? WHERE id=?");
-            mysqli_stmt_bind_param($stmt, "ssssi", $email, $username, $avatar, $password_hashed, $user_id);
+            
+            // MODIFICATION : Ajout de 'bio' à la requête
+            $stmt = mysqli_prepare($connect, "UPDATE `users` SET email=?, username=?, avatar=?, password=?, bio=? WHERE id=?");
+            mysqli_stmt_bind_param($stmt, "sssssi", $email, $username, $avatar, $password_hashed, $bio, $user_id);
             mysqli_stmt_execute($stmt);
             mysqli_stmt_close($stmt);
         } else {
-            // Use prepared statement for UPDATE without password
-            $stmt = mysqli_prepare($connect, "UPDATE `users` SET email=?, username=?, avatar=? WHERE id=?");
-            mysqli_stmt_bind_param($stmt, "sssi", $email, $username, $avatar, $user_id);
+            
+            // MODIFICATION : Ajout de 'bio' à la requête
+            $stmt = mysqli_prepare($connect, "UPDATE `users` SET email=?, username=?, avatar=?, bio=? WHERE id=?");
+            mysqli_stmt_bind_param($stmt, "ssssi", $email, $username, $avatar, $bio, $user_id);
             mysqli_stmt_execute($stmt);
             mysqli_stmt_close($stmt);
         }
@@ -110,8 +118,16 @@ echo htmlspecialchars($rowu['avatar']);
                         <div class="custom-file">
                             <input type="file" class="form-control" name="avafile" accept="image/*" id="avatarfile">
                         </div><br /><br />
-									
-						<label for="name"><i class="fa fa-key"></i> Password:</label>
+                        
+                        <label for="bio"><i class="fa fa-info-circle"></i> Biographie :</label>
+                        <textarea name="bio" id="bio" rows="4" class="form-control"><?php
+// htmlspecialchars_decode est nécessaire si vous avez utilisé htmlspecialchars à l'enregistrement
+// Si $bio est stocké en HTML brut, utilisez htmlspecialchars() pour l'affichage
+echo htmlspecialchars($rowu['bio'] ?? ''); // ?? '' pour gérer les valeurs NULL
+?></textarea>
+                        <i>Une courte biographie qui apparaîtra sur votre profil public.</i>
+						<br /><br />
+                        <label for="name"><i class="fa fa-key"></i> Password:</label>
                         <input type="password" name="password" id="name" value="" class="form-control" />
                         <i>Fill this field only if you want to change your password.</i>
 						<br /><br />

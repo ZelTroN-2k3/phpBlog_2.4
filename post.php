@@ -35,6 +35,22 @@ mysqli_stmt_close($stmt_update);
 $row         = mysqli_fetch_assoc($runq);
 $post_id     = $row['id'];
 $post_slug   = $row['slug'];
+
+// --- NOUVELLE LOGIQUE PHP (FAVORIS) ---
+// Vérifier si l'utilisateur a mis cet article en favori
+$user_has_favorited = false;
+if ($logged == 'Yes') {
+    $stmt_fav_check = mysqli_prepare($connect, "SELECT id FROM user_favorites WHERE user_id = ? AND post_id = ? LIMIT 1");
+    mysqli_stmt_bind_param($stmt_fav_check, "ii", $rowu['id'], $post_id);
+    mysqli_stmt_execute($stmt_fav_check);
+    $result_fav_check = mysqli_stmt_get_result($stmt_fav_check);
+    if (mysqli_num_rows($result_fav_check) > 0) {
+        $user_has_favorited = true;
+    }
+    mysqli_stmt_close($stmt_fav_check);
+}
+// --- FIN NOUVELLE LOGIQUE PHP ---
+
 echo '
                     <div class="card shadow-sm bg-light">
                         <div class="col-md-12">
@@ -53,11 +69,15 @@ echo '
 				
 				<h5 class="card-title fw-bold">' . htmlspecialchars($row['title']) . '</h5>
 				
-				<div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex justify-content-between align-items-center">
 					<small>
 						Posted by <b><i><i class="fas fa-user"></i> ' . post_author($row['author_id']) . '</i></b> 
 						on <b><i><i class="far fa-calendar-alt"></i> ' . date($settings['date_format'] . ' H:i', strtotime($row['created_at'])) . '</i></b>
-					</small>
+                        
+                        <span class="ms-3">
+                           <b><i>' . get_reading_time($row['content']) . '</i></b>
+                        </span>
+                        </small>
 					<small> 	
 						<i class="fa fa-eye"></i> ' . $row['views'] . '
 					</small>
@@ -133,7 +153,24 @@ echo '
 					<span id="like-text"><?php echo $like_text; ?></span>
 					(<span id="like-count"><?php echo $total_likes; ?></span>)
 				</button>
-				<hr />
+				
+				<?php
+                if ($logged == 'Yes'):
+                    // Déterminer l'apparence initiale du bouton
+                    $fav_class = $user_has_favorited ? 'btn-warning' : 'btn-outline-warning';
+                    $fav_icon = $user_has_favorited ? 'fas fa-bookmark' : 'far fa-bookmark'; // fas = plein, far = vide
+                    $fav_text = $user_has_favorited ? 'Enregistré' : 'Enregistrer';
+                ?>
+                    
+                    <button class="btn <?php echo $fav_class; ?> mt-2 ms-2" id="favorite-button" data-post-id="<?php echo $post_id; ?>">
+                        <i class="<?php echo $fav_icon; ?>"></i>
+                        <span id="favorite-text"><?php echo $fav_text; ?></span>
+                    </button>
+                
+                <?php 
+                endif; 
+                ?>
+                <hr />
 
 				<?php
 				
@@ -327,6 +364,14 @@ if ($cancomment == 'Yes') {
 #like-button .fa-thumbs-up {
     margin-right: 8px;
 }
+/* Style pour le nouveau bouton favori */
+#favorite-button {
+    transition: all 0.3s ease;
+    min-width: 130px; /* Un peu plus large pour "Enregistrer" */
+}
+#favorite-button .fa-bookmark {
+    margin-right: 8px;
+}
 </style>
 
 <script>
@@ -510,6 +555,54 @@ document.getElementById('like-button').addEventListener('click', function() {
         likeButton.disabled = false;
     });
 });
+
+// --- NOUVEAU SCRIPT (FAVORIS) ---
+// --- GESTION DU "FAVORI" ---
+$(document).on('click', '#favorite-button', function() {
+
+    const favButton = $(this);
+    const postId = favButton.data('post-id');
+    const favText = $('#favorite-text');
+    const favIcon = favButton.find('i'); // Cible l'icône
+
+    // Empêcher les double-clics
+    favButton.prop('disabled', true);
+
+    const formData = new FormData();
+    formData.append('post_id', postId);
+
+    fetch('ajax_favorite_post.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            
+            // Mettre à jour l'apparence du bouton
+            if (data.favorited) {
+                favButton.removeClass('btn-outline-warning').addClass('btn-warning');
+                favIcon.removeClass('far fa-bookmark').addClass('fas fa-bookmark');
+                favText.text('Enregistré');
+            } else {
+                favButton.removeClass('btn-warning').addClass('btn-outline-warning');
+                favIcon.removeClass('fas fa-bookmark').addClass('far fa-bookmark');
+                favText.text('Enregistrer');
+            }
+        } else {
+            // Gérer les erreurs (ex: afficher data.message dans une alerte)
+            console.error(data.message); 
+            alert(data.message); // Alerter l'utilisateur s'il n'est pas connecté
+        }
+    })
+    .catch(error => console.error('Erreur:', error))
+    .finally(() => {
+        // Réactiver le bouton
+        favButton.prop('disabled', false);
+    });
+});
+// --- FIN NOUVEAU SCRIPT ---
+
 </script>
 
 <?php
