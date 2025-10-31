@@ -172,40 +172,38 @@ echo $total;
                   <div class="card-body">
                     <div class="row">
 <?php
-$query = mysqli_query($connect, "SELECT * FROM `comments` ORDER BY `id` DESC LIMIT 4");
+// --- MODIFICATION : Requête unique pour les commentaires récents ---
+$query = mysqli_query($connect, "
+    SELECT 
+        c.*,
+        p.title AS post_title,
+        u.username AS user_username, 
+        u.avatar AS user_avatar
+    FROM `comments` c
+    JOIN `posts` p ON c.post_id = p.id
+    LEFT JOIN `users` u ON c.user_id = u.id AND c.guest = 'No'
+    ORDER BY c.id DESC 
+    LIMIT 4
+");
+
 $cmnts = mysqli_num_rows($query);
 if ($cmnts == "0") {
     echo '<div class="alert alert-info">There are no posted comments.</div>';
 } else {
-    while ($row = mysqli_fetch_array($query)) {
+    while ($row = mysqli_fetch_assoc($query)) {
         
-        // Get Post Title
-        $post_title = "N/A";
-        $stmt_post = mysqli_prepare($connect, "SELECT title FROM `posts` WHERE id=?");
-        mysqli_stmt_bind_param($stmt_post, "i", $row['post_id']);
-        mysqli_stmt_execute($stmt_post);
-        $result_post = mysqli_stmt_get_result($stmt_post);
-        if($row2 = mysqli_fetch_assoc($result_post)){
-            $post_title = $row2['title'];
-        }
-        mysqli_stmt_close($stmt_post);
+        $post_title = $row['post_title'] ? $row['post_title'] : 'N/A';
+        $avatar = 'assets/img/avatar.png'; // Défaut
+        $author_name = 'Guest'; // Défaut
 
-        // Get Author
-        $author_name = $row['user_id'];
         if ($row['guest'] == 'Yes') {
-            $avatar = 'assets/img/avatar.png';
             $author_name = 'Guest';
-        } else {
-            $stmt_user = mysqli_prepare($connect, "SELECT username, avatar FROM `users` WHERE id=? LIMIT 1");
-            mysqli_stmt_bind_param($stmt_user, "i", $author_name);
-            mysqli_stmt_execute($stmt_user);
-            $result_user = mysqli_stmt_get_result($stmt_user);
-            if ($rowch = mysqli_fetch_assoc($result_user)) {
-                $avatar = $rowch['avatar'];
-                $author_name = $rowch['username'];
-            }
-            mysqli_stmt_close($stmt_user);
+        } else if ($row['user_username']) {
+            // L'utilisateur a été trouvé
+            $avatar = $row['user_avatar'];
+            $author_name = $row['user_username'];
         }
+        // (Si l'utilisateur a été supprimé, il s'affichera comme "Guest")
         
         echo '
             <div class="col-md-2">
@@ -230,6 +228,7 @@ if ($cmnts == "0") {
 ';
     }
 }
+// --- FIN MODIFICATION ---
 ?>
                     </div>
                   </div>
