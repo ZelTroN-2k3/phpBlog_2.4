@@ -53,7 +53,7 @@ $stmt_count = mysqli_prepare($connect, "
     SELECT COUNT(p.id) AS numrows 
     FROM posts p
     JOIN post_tags pt ON p.id = pt.post_id
-    WHERE pt.tag_id = ? AND p.active='Yes'
+    WHERE pt.tag_id = ? AND p.active='Yes' AND p.publish_at <= NOW()
 ");
 mysqli_stmt_bind_param($stmt_count, "i", $tag_id);
 mysqli_stmt_execute($stmt_count);
@@ -70,7 +70,7 @@ if ($numrows <= 0) {
     $stmt_posts = mysqli_prepare($connect, "
         SELECT p.* FROM posts p
         JOIN post_tags pt ON p.id = pt.post_id
-        WHERE pt.tag_id = ? AND p.active='Yes' 
+        WHERE pt.tag_id = ? AND p.active='Yes' AND p.publish_at <= NOW()
         ORDER BY p.created_at DESC 
         LIMIT ?, ?
     ");

@@ -1,7 +1,7 @@
 <?php
 include "core.php";
 
-$query = mysqli_query($connect, "SELECT * FROM `posts` WHERE active='Yes' ORDER BY id DESC LIMIT 20");
+$query = mysqli_query($connect, "SELECT * FROM posts WHERE active='Yes' AND publish_at <= NOW() ORDER BY id DESC LIMIT 20");
  
 header( "Content-type: text/xml");
  

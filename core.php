@@ -1,6 +1,6 @@
 <?php
 // phpBlog version
-$phpblog_version = "2.4";
+$phpblog_version = "2.4+";
 
 $configfile = 'config.php';
 if (!file_exists($configfile)) {
@@ -1018,7 +1018,7 @@ if ($settings['layout'] == 'Wide') {
                     
 <?php
 // Requête simple sans variable externe
-$run   = mysqli_query($connect, "SELECT * FROM `posts` WHERE active='Yes' ORDER BY id DESC LIMIT 6");
+$run = mysqli_query($connect, "SELECT * FROM posts WHERE active='Yes' AND publish_at <= NOW() ORDER BY id DESC LIMIT 6");
 $count = mysqli_num_rows($run);
 if ($count <= 0) {
     echo 'There are no published posts';
@@ -1081,7 +1081,7 @@ function sidebar() {
         SELECT 
             c.category, c.slug, COUNT(p.id) AS posts_count
         FROM `categories` c
-        LEFT JOIN `posts` p ON c.id = p.category_id AND p.active = 'Yes'
+        LEFT JOIN posts p ON c.id = p.category_id AND p.active = 'Yes' AND p.publish_at <= NOW()
         GROUP BY c.id
         ORDER BY c.category ASC
     ");
@@ -1115,7 +1115,7 @@ function sidebar() {
         FROM tags t
         JOIN post_tags pt ON t.id = pt.tag_id
         JOIN posts p ON pt.post_id = p.id
-        WHERE p.active = 'Yes'
+        WHERE p.active = 'Yes' AND p.publish_at <= NOW()
         GROUP BY pt.tag_id
         ORDER BY tag_count DESC, t.name ASC
         LIMIT 15
@@ -1161,7 +1161,7 @@ function sidebar() {
 							<div id="popular" class="tab-pane fade show active">
 <?php
     // Requête simple sans variable externe
-    $run   = mysqli_query($connect, "SELECT * FROM `posts` WHERE active='Yes' ORDER BY views DESC, id DESC LIMIT 4");
+    $run = mysqli_query($connect, "SELECT * FROM posts WHERE active='Yes' AND publish_at <= NOW() ORDER BY views DESC, id DESC LIMIT 4");
     $count = mysqli_num_rows($run);
     if ($count <= 0) {
         echo '<div class="alert alert-info">There are no published posts</div>';

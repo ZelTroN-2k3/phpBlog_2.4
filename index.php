@@ -9,7 +9,7 @@ if ($settings['sidebar_position'] == 'Left') {
 	<div class="col-md-8 mb-3">
 <?php
 $mt3_i = "";
-$run   = mysqli_query($connect, "SELECT * FROM `posts` WHERE active='Yes' AND featured='Yes' ORDER BY id DESC");
+$run = mysqli_query($connect, "SELECT * FROM posts WHERE active='Yes' AND featured='Yes' AND publish_at <= NOW() ORDER BY id DESC");
 $count = mysqli_num_rows($run);
 if ($count > 0) {
     $i = 0;
@@ -34,7 +34,7 @@ if ($count > 0) {
 	<div class="carousel-inner rounded">
 <?php
     $j = 0;
-    $run2 = mysqli_query($connect, "SELECT * FROM `posts` WHERE active='Yes' AND featured='Yes' ORDER BY id DESC");
+    $run2 = mysqli_query($connect, "SELECT * FROM posts WHERE active='Yes' AND featured='Yes' AND publish_at <= NOW() ORDER BY id DESC");
     while ($row2 = mysqli_fetch_assoc($run2)) {
         $active = "";
         if ($j == 0) {
@@ -85,7 +85,7 @@ if ($count > 0) {
             <div class="row <?php echo $mt3_i; ?>">
                 <h5><i class="fa fa-list"></i> Recent Posts</h5>
 <?php
-$run   = mysqli_query($connect, "SELECT * FROM `posts` WHERE active='Yes' ORDER BY id DESC LIMIT 8");
+$run = mysqli_query($connect, "SELECT * FROM posts WHERE active='Yes' AND publish_at <= NOW() ORDER BY id DESC LIMIT 8");
 $count = mysqli_num_rows($run);
 if ($count <= 0) {
     echo '<p>There are no published posts</p>';

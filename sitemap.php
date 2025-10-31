@@ -13,10 +13,10 @@ echo "  <priority>1.0</priority>" . "\n";
 echo "</url>" . "\n";
 
 // 2. Tous les Articles (Posts)
-$posts_query = mysqli_query($connect, "SELECT slug, created_at FROM `posts` WHERE active='Yes' ORDER BY created_at DESC");
+$posts_query = mysqli_query($connect, "SELECT slug, publish_at FROM posts WHERE active='Yes' AND publish_at <= NOW() ORDER BY publish_at DESC");
 while($post = mysqli_fetch_array($posts_query)) {
     // Formatage de la date au format W3C (requis pour <lastmod>)
-    $lastmod = date('c', strtotime($post['created_at']));
+    $lastmod = date('c', strtotime($post['publish_at']));
     
     echo "<url>" . "\n";
     echo '  <loc>' . $settings['site_url'] . '/post?name=' . htmlspecialchars($post['slug']) . '</loc>' . "\n";

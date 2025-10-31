@@ -16,7 +16,7 @@ if (empty($slug)) {
 }
 
 // Use prepared statement for SELECT
-$stmt = mysqli_prepare($connect, "SELECT * FROM `posts` WHERE active='Yes' AND slug=?");
+$stmt = mysqli_prepare($connect, "SELECT * FROM posts WHERE active='Yes' AND publish_at <= NOW() AND slug=?");
 mysqli_stmt_bind_param($stmt, "s", $slug);
 mysqli_stmt_execute($stmt);
 $runq = mysqli_stmt_get_result($stmt);
@@ -150,7 +150,7 @@ echo '
                         JOIN posts p ON pt.post_id = p.id
                         WHERE pt.tag_id IN ($tag_placeholders)
                           AND p.id != ?
-                          AND p.active = 'Yes'
+                          AND p.active = 'Yes' AND p.publish_at <= NOW()
                         GROUP BY p.id
                         ORDER BY common_tags DESC, p.created_at DESC
                         LIMIT ?

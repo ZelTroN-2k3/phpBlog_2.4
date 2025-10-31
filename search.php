@@ -23,7 +23,7 @@ if (isset($_GET['q'])) {
         $search_word = '%' . $word . '%'; // Terme pour le LIKE
 
         // 1. Compter le nombre total de résultats avec une requête préparée
-        $stmt_count = mysqli_prepare($connect, "SELECT COUNT(id) AS numrows FROM posts WHERE active='Yes' AND (title LIKE ? OR content LIKE ?)");
+        $stmt_count = mysqli_prepare($connect, "SELECT COUNT(id) AS numrows FROM posts WHERE active='Yes' AND publish_at <= NOW() AND (title LIKE ? OR content LIKE ?)");
         mysqli_stmt_bind_param($stmt_count, "ss", $search_word, $search_word);
         mysqli_stmt_execute($stmt_count);
         $result_count = mysqli_stmt_get_result($stmt_count);
@@ -52,7 +52,7 @@ if (isset($_GET['q'])) {
             $rows = ($pageNum - 1) * $postsperpage;
 
             // 2. Récupérer les résultats paginés avec une requête préparée
-            $stmt_results = mysqli_prepare($connect, "SELECT * FROM `posts` WHERE (title LIKE ? OR content LIKE ?) AND active='Yes' ORDER BY id DESC LIMIT ?, ?");
+            $stmt_results = mysqli_prepare($connect, "SELECT * FROM `posts` WHERE (title LIKE ? OR content LIKE ?) AND active='Yes' AND publish_at <= NOW() ORDER BY id DESC LIMIT ?, ?");
             // "ssii" -> string, string, integer, integer
             mysqli_stmt_bind_param($stmt_results, "ssii", $search_word, $search_word, $rows, $postsperpage);
             mysqli_stmt_execute($stmt_results);

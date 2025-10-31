@@ -43,7 +43,7 @@ if (!is_numeric($pageNum)) {
 }
 $rows = ($pageNum - 1) * $postsperpage;
 
-$run   = mysqli_query($connect, "SELECT * FROM `posts` WHERE category_id='$category_id' and active='Yes' ORDER BY id DESC LIMIT $rows, $postsperpage");
+$run = mysqli_query($connect, "SELECT * FROM posts WHERE category_id='$category_id' and active='Yes' AND publish_at <= NOW() ORDER BY id DESC LIMIT $rows, $postsperpage");
 $count = mysqli_num_rows($run);
 if ($count <= 0) {
     echo '<div class="alert alert-info">There are no published posts</div>';
@@ -95,7 +95,7 @@ if ($count <= 0) {
 ';
     }
     
-    $query   = "SELECT COUNT(id) AS numrows FROM posts WHERE category_id='$category_id' and active='Yes'";
+    $query = "SELECT COUNT(id) AS numrows FROM posts WHERE category_id='$category_id' and active='Yes' AND publish_at <= NOW()";
     $result  = mysqli_query($connect, $query);
     $row     = mysqli_fetch_array($result);
     $numrows = $row['numrows'];
