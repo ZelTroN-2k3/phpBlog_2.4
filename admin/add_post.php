@@ -8,6 +8,7 @@ if (isset($_POST['add'])) {
     $featured    = $_POST['featured'];
     $category_id = $_POST['category_id'];
     $content     = htmlspecialchars($_POST['content']);
+    $publish_at  = $_POST['publish_at']; // Récupère la date
     
     $download_link = $_POST['download_link'];
     $github_link   = $_POST['github_link'];
@@ -60,8 +61,8 @@ if (isset($_POST['add'])) {
     
     if ($author_id) {
         // Insertion de l'article (sans les tags pour l'instant)
-        $stmt = mysqli_prepare($connect, "INSERT INTO `posts` (category_id, title, slug, author_id, image, content, active, featured, download_link, github_link, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
-        mysqli_stmt_bind_param($stmt, "ississssss", $category_id, $title, $slug, $author_id, $image, $content, $active, $featured, $download_link, $github_link);
+        $stmt = mysqli_prepare($connect, "INSERT INTO `posts` (category_id, title, slug, author_id, image, content, active, featured, download_link, github_link, publish_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+        mysqli_stmt_bind_param($stmt, "ississsssss", $category_id, $title, $slug, $author_id, $image, $content, $active, $featured, $download_link, $github_link, $publish_at);
         mysqli_stmt_execute($stmt);
         $post_id = mysqli_insert_id($connect); // Récupérer l'ID du nouvel article
         mysqli_stmt_close($stmt);
@@ -179,6 +180,11 @@ if (isset($_POST['add'])) {
 							<option value="No" selected>No</option>
                         </select>
 					</p>
+                    <p>
+						<label>Date de Publication</label>
+						<input type="datetime-local" class="form-control" name="publish_at" value="<?php echo date('Y-m-d\TH:i'); ?>" required>
+						<i>Par défaut, c'est maintenant. Modifiez pour programmer la publication.</i>
+					</p>                    
 					<p>
 						<label>Category</label><br />
 						<select name="category_id" class="form-select" required>

@@ -76,7 +76,8 @@ if (isset($_GET['edit-id'])) {
         
         $download_link = $_POST['download_link'];
         $github_link   = $_POST['github_link'];
-        
+        $publish_at  = $_POST['publish_at'];
+
         if (@$_FILES['image']['name'] != '') {
             $target_dir    = "uploads/posts/";
             $target_file   = $target_dir . basename($_FILES["image"]["name"]);
@@ -107,8 +108,8 @@ if (isset($_GET['edit-id'])) {
         }
         
         // Mise à jour de l'article
-        $stmt = mysqli_prepare($connect, "UPDATE posts SET title=?, slug=?, image=?, active=?, featured=?, category_id=?, content=?, download_link=?, github_link=?, created_at=NOW() WHERE id=?");
-        mysqli_stmt_bind_param($stmt, "sssssisssi", $title, $slug, $image, $active, $featured, $category_id, $content, $download_link, $github_link, $id);
+        $stmt = mysqli_prepare($connect, "UPDATE posts SET title=?, slug=?, image=?, active=?, featured=?, category_id=?, content=?, download_link=?, github_link=?, publish_at=?, created_at=NOW() WHERE id=?");
+        mysqli_stmt_bind_param($stmt, "sssssissssi", $title, $slug, $image, $active, $featured, $category_id, $content, $download_link, $github_link, $publish_at, $id);
         mysqli_stmt_execute($stmt);
         mysqli_stmt_close($stmt);
 
@@ -246,6 +247,10 @@ if ($row['featured'] == "Yes") {
 ?>>No</option>
 					</select>
 				</p>
+                <p>
+                    <label>Date de Publication</label>
+                    <input type="datetime-local" class="form-control" name="publish_at" value="<?php echo date('Y-m-d\TH:i', strtotime($row['publish_at'])); ?>" required>
+                </p>                
 				<p>
 					<label>Category</label><br />
 					<select name="category_id" class="form-select" required>

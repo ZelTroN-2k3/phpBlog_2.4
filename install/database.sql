@@ -127,6 +127,7 @@ CREATE TABLE IF NOT EXISTS `posts` (
   `featured` varchar(3) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'No',
   `download_link` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `github_link` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `publish_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `views` int(11) NOT NULL DEFAULT '0',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
