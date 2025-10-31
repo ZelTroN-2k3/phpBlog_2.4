@@ -119,14 +119,98 @@ echo '
 				<div id="share" style="font-size: 14px;"></div>
 				<hr />
 
-				<h5 class="mt-2" id="comments">
+                ';
+                
+                // 1. Trouver les tags de l'article actuel
+                $stmt_find_tags = mysqli_prepare($connect, "SELECT tag_id FROM post_tags WHERE post_id = ?");
+                mysqli_stmt_bind_param($stmt_find_tags, "i", $post_id);
+                mysqli_stmt_execute($stmt_find_tags);
+                $result_find_tags = mysqli_stmt_get_result($stmt_find_tags);
+                
+                $tag_ids = [];
+                while ($tag_row = mysqli_fetch_assoc($result_find_tags)) {
+                    $tag_ids[] = $tag_row['tag_id'];
+                }
+                mysqli_stmt_close($stmt_find_tags);
+
+                if (!empty($tag_ids)) {
+                    // 2. Trouver des articles similaires basés sur ces tags
+                    $tag_placeholders = implode(',', array_fill(0, count($tag_ids), '?')); // Crée ?,?,?
+                    $types = str_repeat('i', count($tag_ids)); // Crée 'iii'
+                    $params = $tag_ids;
+                    
+                    // Ajouter post_id et la limite aux paramètres
+                    $types .= 'ii';
+                    $params[] = $post_id;
+                    $params[] = 4; // Limite de 4 articles similaires
+                    
+                    $sql_related = "
+                        SELECT p.*, COUNT(pt.tag_id) AS common_tags
+                        FROM post_tags pt
+                        JOIN posts p ON pt.post_id = p.id
+                        WHERE pt.tag_id IN ($tag_placeholders)
+                          AND p.id != ?
+                          AND p.active = 'Yes'
+                        GROUP BY p.id
+                        ORDER BY common_tags DESC, p.created_at DESC
+                        LIMIT ?
+                    ";
+                    
+                    $stmt_related = mysqli_prepare($connect, $sql_related);
+                    mysqli_stmt_bind_param($stmt_related, $types, ...$params);
+                    mysqli_stmt_execute($stmt_related);
+                    $result_related = mysqli_stmt_get_result($stmt_related);
+
+                    if (mysqli_num_rows($result_related) > 0) {
+                        echo '<h5><i class="fas fa-stream"></i> Articles Similaires</h5>';
+                        echo '<div class="row">';
+                        
+                        while ($related_post = mysqli_fetch_assoc($result_related)) {
+                            // Style d'affichage similaire à index.php
+                            $image = "";
+                            if($related_post['image'] != "") {
+                                $image = '<img src="' . htmlspecialchars($related_post['image']) . '" alt="' . htmlspecialchars($related_post['title']) . '" class="card-img-top" width="100%" height="150em" />';
+                            } else {
+                                $image = '<svg class="bd-placeholder-img card-img-top" width="100%" height="150em" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder: Thumbnail" preserveAspectRatio="xMidYMid slice" focusable="false">
+                                <title>No Image</title><rect width="100%" height="100%" fill="#55595c"/>
+                                <text x="40%" y="50%" fill="#eceeef" dy=".3em">No Image</text></svg>';
+                            }
+                            
+                            echo '
+                                <div class="col-md-6 mb-3"> 
+                                    <div class="card shadow-sm h-100">
+                                        <a href="post?name=' . htmlspecialchars($related_post['slug']) . '">
+                                            '. $image .'
+                                        </a>
+                                        <div class="card-body d-flex flex-column">
+                                            <a href="post?name=' . htmlspecialchars($related_post['slug']) . '"><h6 class="card-title">' . htmlspecialchars($related_post['title']) . '</h6></a>
+                                            <small class="text-muted mb-2">
+                                                <i class="far fa-calendar-alt"></i> ' . date($settings['date_format'], strtotime($related_post['created_at'])) . '
+                                            </small>
+                                            <p class="card-text mt-2">' . short_text(strip_tags(html_entity_decode($related_post['content'])), 80) . '</p>
+                                            <a href="post?name=' . htmlspecialchars($related_post['slug']) . '" class="btn btn-sm btn-primary col-12 mt-auto">
+                                                Read more
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            ';
+                        }
+                        
+                        echo '</div><hr />';
+                    }
+                    mysqli_stmt_close($stmt_related);
+                }
+                echo '
+                <h5 class="mt-2" id="comments">
 					<i class="fa fa-comments"></i> Comments (' . post_commentscount($row['id']) . ')
 				</h5>
 ';
 ?>
 
 <?php
-// --- MODIFICATION : Remplacement de la boucle par la nouvelle fonction ---
+// --- MODIFICATION : Ajout d'un conteneur pour la liste des commentaires ---
+echo '<div id="comment-list-container">';
 
 // 1. Récupérer le nombre total de commentaires principaux (parent_id = 0)
 $stmt_count_main = mysqli_prepare($connect, "SELECT COUNT(id) AS count FROM comments WHERE post_id=? AND approved='Yes' AND parent_id = 0");
@@ -138,16 +222,20 @@ $count_main = $count_row['count'];
 mysqli_stmt_close($stmt_count_main);
 
 if ($count_main <= 0) {
-    echo '<div class="alert alert-info">There are no comments yet.</div>';
+    echo '<div class="alert alert-info" id="no-comments-alert">There are no comments yet.</div>';
 } else {
     // 2. Appeler la fonction récursive pour afficher tous les commentaires (en commençant par les parents)
     display_comments($post_id, 0, 0);
 }
+echo '</div>'; // Fin de #comment-list-container
 // --- FIN MODIFICATION ---
 ?>                                  
                     
                     <div id="comment-form-container" class="mt-4"> 
                         <h5 class="leave-comment-title">Leave A Comment</h5>
+                        
+                        <div id="comment-form-messages" class="mb-3"></div>
+                        
 <?php
 $guest = 'No';
 
@@ -162,18 +250,17 @@ if ($logged == 'Yes') {
 
 if ($cancomment == 'Yes') {
 ?>
-                        <form name="comment_form" id="main-comment-form" action="post?name=<?php
-    echo $post_slug;
-?>" method="post">
+                        <form name="comment_form" id="main-comment-form" method="post" action="ajax_submit_comment.php">
                             
                             <input type="hidden" name="parent_id" id="parent_id" value="0">
+                            <input type="hidden" name="post_id" id="post_id" value="<?php echo $post_id; ?>">
                             
 <?php
     if ($logged == 'No') {
         $guest = 'Yes';
 ?>
                         <label for="name"><i class="fa fa-user"></i> Name:</label>
-                        <input type="text" name="author" value="" class="form-control" required />
+                        <input type="text" name="author" id="comment-author" value="" class="form-control" required />
                         <br />
 <?php
     }
@@ -189,11 +276,11 @@ if ($cancomment == 'Yes') {
 ?>
 						<center><div class="g-recaptcha" data-sitekey="<?php
         echo $settings['gcaptcha_sitekey'];
-?>"></div></center>
+?>" id="recaptcha-widget"></div></center>
 <?php
     }
 ?>
-                        <input type="submit" name="post" class="btn btn-primary col-12" value="Post" />
+                        <input type="submit" name="post" id="submit-comment-btn" class="btn btn-primary col-12" value="Post" />
                         <button type="button" class="btn btn-secondary col-12 mt-2" id="cancel-reply-btn" style="display:none;" onclick="cancelReply()">
                             Annuler la réponse
                         </button>
@@ -204,58 +291,8 @@ if ($cancomment == 'Yes') {
 }
 ?>
                     </div> <?php
-if ($cancomment == 'Yes') {
-    if (isset($_POST['post'])) {
-        
-        $authname_problem = 'No';
-		$comment          = $_POST['comment'];
-		// MODIFICATION : Récupérer le parent_id
-		$parent_id        = (int)$_POST['parent_id']; 
-		
-		$captcha = '';
-		
-        if ($logged == 'No') {
-            $author = $_POST['author'];
-            
-            $bot = 'Yes';
-            if (isset($_POST['g-recaptcha-response'])) {
-                $captcha = $_POST['g-recaptcha-response'];
-            }
-            if ($captcha) {
-                $url          = 'https://www.google.com/recaptcha/api/siteverify?secret=' . urlencode($settings['gcaptcha_secretkey']) . '&response=' . urlencode($captcha);
-                $response     = file_get_contents($url);
-                $responseKeys = json_decode($response, true);
-                if ($responseKeys["success"]) {
-                    $bot = 'No';
-                }
-            }
-            
-            if (strlen($author) < 2) {
-                $authname_problem = 'Yes';
-                echo '<div class="alert alert-warning">Your name is too short.</div>';
-            }
-        } else {
-            $bot    = 'No';
-            $author = $rowu['id'];
-        }
-        
-        if (strlen($comment) < 2) {
-            echo '<div class="alert alert-danger">Your comment is too short.</div>';
-        } else {
-            if ($authname_problem == 'No' AND $bot == 'No') {
-                // MODIFICATION : Mise à jour de la requête pour inclure parent_id
-                $stmt = mysqli_prepare($connect, "INSERT INTO `comments` (`post_id`, `parent_id`, `comment`, `user_id`, `guest`, `created_at`) VALUES (?, ?, ?, ?, ?, NOW())");
-                // MODIFICATION : Ajustement des paramètres
-                mysqli_stmt_bind_param($stmt, "iisss", $row['id'], $parent_id, $comment, $author, $guest);
-                mysqli_stmt_execute($stmt);
-                mysqli_stmt_close($stmt);
-
-                echo '<div class="alert alert-success">Your comment has been successfully posted</div>';
-                echo '<meta http-equiv="refresh" content="0;url=post?name=' . $row['slug'] . '#comments">';
-            }
-        }
-    }
-}
+// MODIFICATION : Le bloc PHP de traitement a été supprimé
+// Il est maintenant dans ajax_submit_comment.php
 ?>
                     </div>
                 </div>
@@ -279,52 +316,124 @@ function countText() {
 	document.getElementById('characters').innerText = 1000 - text.length;
 }
 
-// --- NOUVEAU SCRIPT POUR LES RÉPONSES ---
+// --- SCRIPT POUR LES RÉPONSES ET L'AJAX ---
+
 // Références aux éléments du formulaire
 const formContainer = document.getElementById('comment-form-container');
 const mainForm = document.getElementById('main-comment-form');
 const parentIdInput = document.getElementById('parent_id');
 const cancelBtn = document.getElementById('cancel-reply-btn');
 const formTitle = formContainer.querySelector('h5.leave-comment-title');
+const formMessages = document.getElementById('comment-form-messages');
+const submitBtn = document.getElementById('submit-comment-btn');
+const commentListContainer = document.getElementById('comment-list-container');
 
 // Emplacement d'origine du formulaire
 const originalFormParent = formContainer.parentNode;
 
 function replyToComment(commentId) {
-    // 1. Trouver le conteneur du commentaire auquel on répond
     const commentElement = document.getElementById('comment-' + commentId);
     if (!commentElement) return;
-
-    // 2. Déplacer le formulaire sous ce commentaire
     commentElement.appendChild(formContainer);
-
-    // 3. Mettre à jour la valeur du parent_id
     parentIdInput.value = commentId;
-
-    // 4. Afficher le bouton "Annuler"
     cancelBtn.style.display = 'block';
-    
-    // 5. Changer le titre du formulaire
     formTitle.innerText = 'Replying to comment #' + commentId;
-    
-    // 6. Mettre le focus sur la zone de texte
     document.getElementById('comment').focus();
 }
 
 function cancelReply() {
-    // 1. Remettre le formulaire à sa place d'origine
     originalFormParent.appendChild(formContainer);
-
-    // 2. Réinitialiser la valeur du parent_id
     parentIdInput.value = '0';
-
-    // 3. Cacher le bouton "Annuler"
     cancelBtn.style.display = 'none';
-    
-    // 4. Réinitialiser le titre
     formTitle.innerText = 'Leave A Comment';
+    formMessages.innerHTML = ''; // Nettoyer les messages
 }
-// --- FIN NOUVEAU SCRIPT ---
+
+// --- DÉBUT GESTION AJAX ---
+if (mainForm) {
+    mainForm.addEventListener('submit', function(e) {
+        e.preventDefault(); // Empêcher la soumission classique
+
+        // Désactiver le bouton et afficher un loader
+        submitBtn.value = 'Envoi...';
+        submitBtn.disabled = true;
+        formMessages.innerHTML = '';
+
+        const formData = new FormData(mainForm);
+        
+        fetch('ajax_submit_comment.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Succès !
+                formMessages.innerHTML = '<div class="alert alert-success">' + data.message + '</div>';
+                
+                // Vider le formulaire
+                mainForm.reset();
+                document.getElementById('characters').innerText = '1000';
+                
+                // Réinitialiser reCAPTCHA si c'est un invité
+                <?php if ($guest == 'Yes'): ?>
+                if (typeof grecaptcha !== 'undefined') {
+                    grecaptcha.reset();
+                }
+                <?php endif; ?>
+
+                // --- MODIFICATION : Logique d'insertion corrigée ---
+                // Créer un élément temporaire pour insérer le HTML
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = data.html;
+                const newCommentElement = tempDiv.firstElementChild;
+                
+                if (data.parent_id == 0) {
+                    // C'est un commentaire principal, ajouter à la fin de la liste principale
+                    commentListContainer.appendChild(newCommentElement);
+                    // Cacher le message "pas de commentaires" s'il existe
+                    const noCommentsAlert = document.getElementById('no-comments-alert');
+                    if(noCommentsAlert) noCommentsAlert.style.display = 'none';
+                } else {
+                    // C'est une réponse, l'ajouter sous le parent
+                    const parentElement = document.getElementById('comment-' + data.parent_id);
+                    if (parentElement) {
+                        parentElement.appendChild(newCommentElement);
+                    }
+                }
+                
+                // Animer l'apparition
+                setTimeout(() => {
+                    newCommentElement.style.opacity = 1;
+                }, 10);
+                // --- FIN MODIFICATION ---
+                
+                // Réinitialiser et déplacer le formulaire
+                cancelReply();
+
+            } else {
+                // Erreur
+                formMessages.innerHTML = '<div class="alert alert-danger">' + data.message + '</div>';
+                // Réinitialiser reCAPTCHA pour que l'utilisateur puisse réessayer
+                <?php if ($guest == 'Yes'): ?>
+                if (typeof grecaptcha !== 'undefined') {
+                    grecaptcha.reset();
+                }
+                <?php endif; ?>
+            }
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            formMessages.innerHTML = '<div class="alert alert-danger">Une erreur réseau est survenue.</div>';
+        })
+        .finally(() => {
+            // Réactiver le bouton
+            submitBtn.value = 'Post';
+            submitBtn.disabled = false;
+        });
+    });
+}
+// --- FIN GESTION AJAX ---
 </script>
 <?php
 if ($settings['sidebar_position'] == 'Right') {

@@ -240,16 +240,98 @@ function display_comments($post_id, $parent_id = 0, $level = 0) {
                     </button>
                 </div>
             </div>
-        </div>
         ';
         // --- Fin du bloc d'affichage ---
         
         // Appel récursif pour afficher les enfants de ce commentaire
         display_comments($post_id, $comment['id'], $level + 1);
+        
+        echo '</div>'; // Fermer le comment-container
     }
     mysqli_stmt_close($stmt_comments);
 }
 // --- FIN NOUVELLE FONCTION ---
+
+// --- NOUVELLE FONCTION POUR L'AJAX ---
+function render_comment_html($comment_id, $margin_left = 0) {
+    global $connect, $settings;
+    
+    // 1. Récupérer le commentaire
+    $stmt_comment = mysqli_prepare($connect, "SELECT * FROM comments WHERE id=? AND approved='Yes' LIMIT 1");
+    mysqli_stmt_bind_param($stmt_comment, "i", $comment_id);
+    mysqli_stmt_execute($stmt_comment);
+    $q = mysqli_stmt_get_result($stmt_comment);
+    $comment = mysqli_fetch_array($q);
+    mysqli_stmt_close($stmt_comment);
+
+    if (!$comment) {
+        return ""; // Retourne une chaîne vide si le commentaire n'est pas trouvé
+    }
+
+    // 2. Récupérer les infos de l'auteur
+    $aauthor_id = $comment['user_id'];
+    $aauthor_name = 'Guest';
+    
+    if ($comment['guest'] == 'Yes') {
+        $aavatar = 'assets/img/avatar.png';
+        $arole   = '<span class="badge bg-secondary">Guest</span>';
+    } else {
+        $stmt_user = mysqli_prepare($connect, "SELECT * FROM `users` WHERE id=? LIMIT 1");
+        mysqli_stmt_bind_param($stmt_user, "i", $aauthor_id);
+        mysqli_stmt_execute($stmt_user);
+        $querych = mysqli_stmt_get_result($stmt_user);
+        
+        if (mysqli_num_rows($querych) > 0) {
+            $rowch = mysqli_fetch_assoc($querych);
+            $aavatar = $rowch['avatar'];
+            $aauthor_name = $rowch['username'];
+            if ($rowch['role'] == 'Admin') {
+                $arole = '<span class="badge bg-danger">Administrator</span>';
+            } elseif ($rowch['role'] == 'Editor') {
+                $arole = '<span class="badge bg-warning">Editor</span>';
+            } else {
+                $arole = '<span class="badge bg-info">User</span>';
+            }
+        }
+        mysqli_stmt_close($stmt_user);
+    }
+    
+    // 3. Construire le HTML (on utilise ob_start pour "capturer" l'echo)
+    ob_start();
+    ?>
+    <div class="comment-container" style="margin-left: <?php echo $margin_left; ?>px; opacity: 0; transition: opacity 0.5s ease;" id="comment-<?php echo $comment['id']; ?>">
+        <div class="row d-flex justify-content-center bg-white rounded border mt-3 mb-3 ms-1 me-1">
+            <div class="mb-2 d-flex flex-start align-items-center">
+                <img class="rounded-circle shadow-1-strong mt-1 me-3"
+                    src="<?php echo htmlspecialchars($aavatar); ?>" alt="<?php echo htmlspecialchars($aauthor_name); ?>" 
+                    width="50" height="50" />
+                <div class="mt-1 mb-1">
+                    <h6 class="fw-bold mt-1 mb-1">
+                        <i class="fa fa-user"></i> <?php echo htmlspecialchars($aauthor_name); ?> <?php echo $arole; ?>
+                    </h6>
+                    <p class="small mb-0">
+                        <i><i class="fas fa-calendar"></i> <?php echo date($settings['date_format'] . ' H:i', strtotime($comment['created_at'])); ?></i>
+                    </p>
+                </div>
+            </div>
+            <hr class="my-0" />
+            <p class="mt-1 mb-1 pb-1">
+                <?php echo format_comment_with_code($comment['comment']); ?>
+            </p>
+            <hr class="my-0" />
+            <div class="p-2">
+                <button class="btn btn-sm btn-link" onclick="replyToComment(<?php echo $comment['id']; ?>)">
+                    <i class="fas fa-reply"></i> Répondre
+                </button>
+            </div>
+        </div>
+        </div>
+    
+    <?php
+    // 4. Retourner le HTML capturé
+    return ob_get_clean();
+}
+// --- FIN NOUVELLE FONCTION AJAX ---
 
 function post_author($author_id)
 {
