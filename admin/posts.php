@@ -10,6 +10,13 @@ if (isset($_GET['delete-id'])) {
     mysqli_stmt_execute($stmt);
     mysqli_stmt_close($stmt);
 
+    // MODIFICATION : Supprimer aussi les liaisons de tags
+    $stmt_tags = mysqli_prepare($connect, "DELETE FROM `post_tags` WHERE post_id=?");
+    mysqli_stmt_bind_param($stmt_tags, "i", $id);
+    mysqli_stmt_execute($stmt_tags);
+    mysqli_stmt_close($stmt_tags);
+    // FIN MODIFICATION
+
     $stmt = mysqli_prepare($connect, "DELETE FROM `posts` WHERE id=?");
     mysqli_stmt_bind_param($stmt, "i", $id);
     mysqli_stmt_execute($stmt);
@@ -37,6 +44,27 @@ if (isset($_GET['edit-id'])) {
         exit;
     }
     
+    // --- DÉBUT CHARGEMENT DES TAGS EXISTANTS ---
+    $tags_value = '';
+    $stmt_get_tags = mysqli_prepare($connect, "
+        SELECT t.name 
+        FROM tags t
+        JOIN post_tags pt ON t.id = pt.tag_id
+        WHERE pt.post_id = ?
+    ");
+    mysqli_stmt_bind_param($stmt_get_tags, "i", $id);
+    mysqli_stmt_execute($stmt_get_tags);
+    $result_tags = mysqli_stmt_get_result($stmt_get_tags);
+    $existing_tags = [];
+    while ($row_tag = mysqli_fetch_assoc($result_tags)) {
+        $existing_tags[] = $row_tag['name'];
+    }
+    mysqli_stmt_close($stmt_get_tags);
+    // Convertit le tableau PHP en une chaîne de tags séparés par des virgules pour Tagify
+    $tags_value = implode(',', $existing_tags);
+    // --- FIN CHARGEMENT DES TAGS EXISTANTS ---
+    
+    
     if (isset($_POST['submit'])) {
         $title       = $_POST['title'];
         $slug        = generateSeoURL($title);
@@ -46,12 +74,8 @@ if (isset($_GET['edit-id'])) {
         $category_id = $_POST['category_id'];
         $content     = htmlspecialchars($_POST['content']);
         
-        // NOUVEAUX CHAMPS
         $download_link = $_POST['download_link'];
         $github_link   = $_POST['github_link'];
-        
-        $date        = date($settings['date_format']);
-        $time        = date('H:i');
         
         if (@$_FILES['image']['name'] != '') {
             $target_dir    = "uploads/posts/";
@@ -60,7 +84,6 @@ if (isset($_GET['edit-id'])) {
             
             $uploadOk = 1;
             
-            // Check if image file is a actual image or fake image
             $check = getimagesize($_FILES["image"]["tmp_name"]);
             if ($check !== false) {
                 $uploadOk = 1;
@@ -69,7 +92,6 @@ if (isset($_GET['edit-id'])) {
                 $uploadOk = 0;
             }
             
-            // Check file size
             if ($_FILES["image"]["size"] > 10000000) {
                 echo '<div class="alert alert-warning">Sorry, your file is too large.</div>';
                 $uploadOk = 0;
@@ -84,11 +106,84 @@ if (isset($_GET['edit-id'])) {
             }
         }
         
-        // Use prepared statement for UPDATE - MISE À JOUR
-        $stmt = mysqli_prepare($connect, "UPDATE posts SET title=?, slug=?, image=?, active=?, featured=?, date=?, time=?, category_id=?, content=?, download_link=?, github_link=? WHERE id=?");
-        mysqli_stmt_bind_param($stmt, "sssssssssssi", $title, $slug, $image, $active, $featured, $date, $time, $category_id, $content, $download_link, $github_link, $id);
+        // Mise à jour de l'article
+        $stmt = mysqli_prepare($connect, "UPDATE posts SET title=?, slug=?, image=?, active=?, featured=?, category_id=?, content=?, download_link=?, github_link=?, created_at=NOW() WHERE id=?");
+        mysqli_stmt_bind_param($stmt, "sssssisssi", $title, $slug, $image, $active, $featured, $category_id, $content, $download_link, $github_link, $id);
         mysqli_stmt_execute($stmt);
         mysqli_stmt_close($stmt);
+
+        // --- DÉBUT GESTION DES TAGS (MISE À JOUR) ---
+        $post_id = $id; // L'ID de l'article ne change pas
+        $new_tag_slugs = []; // Stocker les slugs des nouveaux tags
+        
+        if (!empty($_POST['tags'])) {
+            $tags_json = $_POST['tags'];
+            $tags_array = json_decode($tags_json);
+            
+            if (is_array($tags_array) && !empty($tags_array)) {
+                
+                $stmt_tag_find = mysqli_prepare($connect, "SELECT id, slug FROM tags WHERE slug = ? LIMIT 1");
+                $stmt_tag_insert = mysqli_prepare($connect, "INSERT INTO tags (name, slug) VALUES (?, ?)");
+                $stmt_post_tag_insert = mysqli_prepare($connect, "INSERT INTO post_tags (post_id, tag_id) VALUES (?, ?)");
+                
+                foreach ($tags_array as $tag_obj) {
+                    $tag_name = $tag_obj->value;
+                    $tag_slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $tag_name), '-'));
+                    
+                    if (empty($tag_slug)) continue;
+                    
+                    $new_tag_slugs[] = $tag_slug; // Ajouter au tableau pour la vérification de suppression
+
+                    // 1. Vérifier si le tag existe
+                    mysqli_stmt_bind_param($stmt_tag_find, "s", $tag_slug);
+                    mysqli_stmt_execute($stmt_tag_find);
+                    $result_tag = mysqli_stmt_get_result($stmt_tag_find);
+                    
+                    if ($row_tag = mysqli_fetch_assoc($result_tag)) {
+                        $tag_id = $row_tag['id'];
+                    } else {
+                        // 2. S'il n'existe pas, le créer
+                        mysqli_stmt_bind_param($stmt_tag_insert, "ss", $tag_name, $tag_slug);
+                        mysqli_stmt_execute($stmt_tag_insert);
+                        $tag_id = mysqli_insert_id($connect);
+                    }
+                    
+                    // 3. Lier le tag à l'article (ignorer si la liaison existe déjà)
+                    mysqli_stmt_bind_param($stmt_post_tag_insert, "ii", $post_id, $tag_id);
+                    @mysqli_stmt_execute($stmt_post_tag_insert); // Utiliser @ pour ignorer les erreurs de doublons
+                }
+                
+                mysqli_stmt_close($stmt_tag_find);
+                mysqli_stmt_close($stmt_tag_insert);
+                mysqli_stmt_close($stmt_post_tag_insert);
+            }
+        }
+        
+        // 4. Supprimer les anciens tags qui ne sont plus dans la liste
+        if (!empty($existing_tags)) {
+            $stmt_get_tag_id_slug = mysqli_prepare($connect, "SELECT id, slug FROM tags WHERE name = ?");
+            $stmt_delete_link = mysqli_prepare($connect, "DELETE FROM post_tags WHERE post_id = ? AND tag_id = ?");
+
+            foreach ($existing_tags as $old_tag_name) {
+                mysqli_stmt_bind_param($stmt_get_tag_id_slug, "s", $old_tag_name);
+                mysqli_stmt_execute($stmt_get_tag_id_slug);
+                $result_old_tag = mysqli_stmt_get_result($stmt_get_tag_id_slug);
+                
+                if ($row_old_tag = mysqli_fetch_assoc($result_old_tag)) {
+                    $old_tag_slug = $row_old_tag['slug'];
+                    $old_tag_id = $row_old_tag['id'];
+
+                    // Si l'ancien slug n'est PAS dans le nouveau tableau, le supprimer
+                    if (!in_array($old_tag_slug, $new_tag_slugs)) {
+                        mysqli_stmt_bind_param($stmt_delete_link, "ii", $post_id, $old_tag_id);
+                        mysqli_stmt_execute($stmt_delete_link);
+                    }
+                }
+            }
+            mysqli_stmt_close($stmt_get_tag_id_slug);
+            mysqli_stmt_close($stmt_delete_link);
+        }
+        // --- FIN GESTION DES TAGS (MISE À JOUR) ---
 
         echo '<meta http-equiv="refresh" content="0;url=posts.php">';
     }
@@ -145,7 +240,7 @@ if ($row['featured'] == "Yes") {
 }
 ?>>Yes</option>
 						<option value="No" <?php
-if ($row['featured'] == "No") {
+if ($row['featured'] == "Yes") {
 	echo 'selected';
 }
 ?>>No</option>
@@ -167,6 +262,11 @@ while ($rw = mysqli_fetch_assoc($crun)) {
 					</select>
 				</p>
 				
+				<p>
+					<label>Tags</label>
+					<input name="tags" class="form-control" value="<?php echo htmlspecialchars($tags_value); ?>" placeholder="php, javascript, css">
+					<i>Séparez les tags par une virgule ou Entrée.</i>
+				</p>
 				<p>
 					<label>Lien de téléchargement (.rar, .zip)</label>
 					<div class="input-group">
@@ -237,7 +337,7 @@ while ($row = mysqli_fetch_assoc($sql)) {
     echo '</td>
 						<td>' . $row['title'] . ' ' . $featured . '</td>
 						<td>' . post_author($row['author_id']) . '</td>
-						<td data-sort="' . strtotime($row['date']) . '">' . date($settings['date_format'], strtotime($row['date'])) . ', ' . $row['time'] . '</td>
+						<td data-sort="' . strtotime($row['created_at']) . '">' . date($settings['date_format'] . ' H:i', strtotime($row['created_at'])) . '</td>
 						<td>';
 	if($row['active'] == "Yes") {
 		echo '<span class="badge bg-success">Yes</span>';
@@ -279,6 +379,20 @@ $(document).ready(function() {
 		noteBar.find('[data-toggle]').each(function() {
 		$(this).attr('data-bs-toggle', $(this).attr('data-toggle')).removeAttr('data-toggle');
 	});
+
+	// --- DÉBUT INITIALISATION TAGIFY ---
+	// Récupère l'élément input
+	var input = document.querySelector('input[name=tags]');
+	
+	// Initialise Tagify
+	if(input) { // S'assurer que l'input existe (il n'existe que sur la vue "edit")
+		new Tagify(input, {
+			duplicate: false, 
+			delimiters: ",", 
+			addTagOnBlur: true 
+		});
+	}
+	// --- FIN INITIALISATION TAGIFY ---
 } );
 </script>
 <?php

@@ -23,8 +23,7 @@ if (isset($_POST['upload'])) {
     $tmp_name = $_FILES['file']['tmp_name'];
     $name     = $_FILES['file']['name'];
     
-    $date = date($settings['date_format']);
-    $time = date('H:i');
+    // MODIFICATION : Suppression de date & time
     
     $format = strtolower(pathinfo($name, PATHINFO_EXTENSION));
     $allowed_formats = ["png", "gif", "jpeg", "jpg", "bmp", "doc", "docx", "pdf", "txt", "rar", "html", "zip", "odt", "rtf", "csv", "ods", "xls", "xlsx", "odp", "ppt", "pptx", "mp3", "flac", "wav", "wma", "aac", "m4a", "htm", "mov", "avi", "mkv", "mp4", "wmv", "webm", "ts", "webp", "svg"];
@@ -37,9 +36,10 @@ if (isset($_POST['upload'])) {
         $location   = "../uploads/other/file_$new_string.$format";
         move_uploaded_file($tmp_name, $location);
         
-        // Use prepared statement for INSERT
-        $stmt = mysqli_prepare($connect, "INSERT INTO `files` (filename, date, time, path) VALUES (?, ?, ?, ?)");
-        mysqli_stmt_bind_param($stmt, "ssss", $name, $date, $time, $location);
+        // MODIFICATION : Mise à jour de la requête
+        $stmt = mysqli_prepare($connect, "INSERT INTO `files` (filename, path, created_at) VALUES (?, ?, NOW())");
+        // MODIFICATION : Ajustement des paramètres
+        mysqli_stmt_bind_param($stmt, "ss", $name, $location);
         mysqli_stmt_execute($stmt);
         mysqli_stmt_close($stmt);
 

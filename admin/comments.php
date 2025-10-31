@@ -159,7 +159,7 @@ while ($row = mysqli_fetch_assoc($result)) {
     echo '
                 <tr>
 	                <td><img src="../' . htmlspecialchars($avatar) . '" width="45px" height="45px" /> ' . htmlspecialchars($author_name) . '' . $badge . '</td>
-	                <td data-sort="' . strtotime($row['date']) . '">' . date($settings['date_format'], strtotime($row['date'])) . ', ' . $row['time'] . '</td>
+	                <td data-sort="' . strtotime($row['created_at']) . '">' . date($settings['date_format'] . ' H:i', strtotime($row['created_at'])) . '</td>
 					<td>';
 	if($row['approved'] == "Yes") {
 		echo '<span class="badge bg-success">Yes</span>';

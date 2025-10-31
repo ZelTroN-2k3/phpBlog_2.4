@@ -10,6 +10,8 @@ DROP TABLE IF EXISTS `pages`;
 DROP TABLE IF EXISTS `posts`;
 DROP TABLE IF EXISTS `users`;
 DROP TABLE IF EXISTS `widgets`;
+DROP TABLE IF EXISTS `tags`;
+DROP TABLE IF EXISTS `post_tags`;
 
 -- --------------------------------------------------------
 
@@ -39,10 +41,10 @@ CREATE TABLE IF NOT EXISTS `comments` (
   `post_id` int(11) NOT NULL,
   `user_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `comment` varchar(1000) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `date` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `time` varchar(5) COLLATE utf8mb4_unicode_ci NOT NULL,
   `approved` varchar(3) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Yes',
-  `guest` varchar(3) COLLATE utf8mb4_unicode_ci NOT NULL
+  `guest` varchar(3) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `parent_id` int(11) NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -50,9 +52,8 @@ CREATE TABLE IF NOT EXISTS `comments` (
 CREATE TABLE IF NOT EXISTS `files` (
   `id` int(11) NOT NULL,
   `filename` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `date` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `time` varchar(5) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `path` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
+  `path` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -89,9 +90,8 @@ CREATE TABLE IF NOT EXISTS `messages` (
   `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `email` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `content` text COLLATE utf8mb4_unicode_ci NOT NULL,
-  `date` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `time` varchar(5) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `viewed` varchar(3) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'No'
+  `viewed` varchar(3) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'No',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -115,9 +115,6 @@ INSERT INTO `pages` (`id`, `title`, `slug`, `content`) VALUES
 
 -- --------------------------------------------------------
 
---
--- ICI EST LA MODIFICATION
---
 CREATE TABLE IF NOT EXISTS `posts` (
   `id` int(11) NOT NULL,
   `category_id` int(11) NOT NULL,
@@ -126,13 +123,28 @@ CREATE TABLE IF NOT EXISTS `posts` (
   `image` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `content` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
   `author_id` int(11) NOT NULL DEFAULT 1,
-  `date` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `time` varchar(5) COLLATE utf8mb4_unicode_ci NOT NULL,
   `active` varchar(3) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Yes',
   `featured` varchar(3) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'No',
   `download_link` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `github_link` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `views` int(11) NOT NULL DEFAULT '0'
+  `views` int(11) NOT NULL DEFAULT '0',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS `tags` (
+  `id` int(11) NOT NULL,
+  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `slug` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS `post_tags` (
+  `id` int(11) NOT NULL,
+  `post_id` int(11) NOT NULL,
+  `tag_id` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -189,6 +201,15 @@ ALTER TABLE `pages`
 
 ALTER TABLE `posts`
   ADD PRIMARY KEY (`id`);
+  
+ALTER TABLE `tags`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `slug` (`slug`);
+
+ALTER TABLE `post_tags`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `post_id` (`post_id`),
+  ADD KEY `tag_id` (`tag_id`);
 
 ALTER TABLE `users`
   ADD PRIMARY KEY (`id`);
@@ -224,6 +245,12 @@ ALTER TABLE `pages`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 ALTER TABLE `posts`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  
+ALTER TABLE `tags`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+ALTER TABLE `post_tags`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 ALTER TABLE `users`

@@ -141,24 +141,21 @@ function generateSeoURL($string, $random_numbers = 1, $wordLimit = 8) {
 
     <link rel="shortcut icon" href="../assets/img/favicon.png" />
 
-    <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 
-	<!-- Font Awesome -->
 	<link href="https://use.fontawesome.com/releases/v5.15.4/css/all.css" rel="stylesheet"/>
 
-	<!--DataTables-->
-    <link href="https://cdn.datatables.net/v/bs5/dt-2.1.8/r-3.0.3/datatables.min.css" rel="stylesheet">
+	<link href="https://cdn.datatables.net/v/bs5/dt-2.1.8/r-3.0.3/datatables.min.css" rel="stylesheet">
  
-	<!-- jQuery --> 
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+	<script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
 	
-	<!-- SummerNote -->
 	<link href="https://cdn.jsdelivr.net/npm/summernote@0.9.1/dist/summernote-bs5.min.css" rel="stylesheet">
 	<script src="https://cdn.jsdelivr.net/npm/summernote@0.9.1/dist/summernote-bs5.min.js"></script>
 	
-	
+	<script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.polyfills.min.js"></script>
+	<link href="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.css" rel="stylesheet" type="text/css" />
 	<style>
     a:link {
       text-decoration: none;
@@ -168,15 +165,15 @@ function generateSeoURL($string, $random_numbers = 1, $wordLimit = 8) {
       text-decoration: none;
     }
     
-    body {
-      font-size: .875rem;
-    }
+	body {
+	  font-size: .875rem;
+	}
 
-    .feather {
-      width: 16px;
-      height: 16px;
-      vertical-align: text-bottom;
-    }
+	.feather {
+	  width: 16px;
+	  height: 16px;
+	  vertical-align: text-bottom;
+	}
 
 	.sidebar {
 	  position: fixed;
@@ -240,13 +237,26 @@ function generateSeoURL($string, $random_numbers = 1, $wordLimit = 8) {
 	  top: .25rem;
 	  right: 1rem;
 	}
-
-.dashboard-member-activity-avatar {
+	
+	.dashboard-member-activity-avatar {
 	  width: 64px;
 	  height: 64px;
-	  border-radius: 40%; /* Pour un affichage arrondi */
+	  border-radius: 50%; /* Pour un affichage arrondi */
 	  object-fit: cover;  /* Pour éviter la déformation de l'image */
 	}
+	
+	/* MODIFICATION : Style pour Tagify */
+	.tagify{
+		--tag-bg: #0d6efd; /* Couleur de fond du tag (primary) */
+		--tag-text-color: #ffffff; /* Couleur du texte du tag */
+		border-color: #ced4da; /* Couleur de bordure Bootstrap */
+	}
+	.tagify__input{
+		font-size: 1rem;
+		line-height: 1.5;
+	}
+	/* FIN MODIFICATION */
+	
     </style>
 
 <body>

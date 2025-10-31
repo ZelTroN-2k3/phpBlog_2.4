@@ -8,10 +8,7 @@ if (isset($_POST['add'])) {
     $featured    = $_POST['featured'];
     $category_id = $_POST['category_id'];
     $content     = htmlspecialchars($_POST['content']);
-    $date        = date($settings['date_format']);
-    $time        = date('H:i');
     
-    // NOUVEAUX CHAMPS
     $download_link = $_POST['download_link'];
     $github_link   = $_POST['github_link'];
     
@@ -62,13 +59,57 @@ if (isset($_POST['add'])) {
     }
     
     if ($author_id) {
-        // Use prepared statement for INSERT - MISE À JOUR
-        $stmt = mysqli_prepare($connect, "INSERT INTO `posts` (category_id, title, slug, author_id, image, content, date, time, active, featured, download_link, github_link) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        mysqli_stmt_bind_param($stmt, "ississssssss", $category_id, $title, $slug, $author_id, $image, $content, $date, $time, $active, $featured, $download_link, $github_link);
+        // Insertion de l'article (sans les tags pour l'instant)
+        $stmt = mysqli_prepare($connect, "INSERT INTO `posts` (category_id, title, slug, author_id, image, content, active, featured, download_link, github_link, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+        mysqli_stmt_bind_param($stmt, "ississssss", $category_id, $title, $slug, $author_id, $image, $content, $active, $featured, $download_link, $github_link);
         mysqli_stmt_execute($stmt);
-        $post_id = mysqli_insert_id($connect); // Get the new post ID
+        $post_id = mysqli_insert_id($connect); // Récupérer l'ID du nouvel article
         mysqli_stmt_close($stmt);
 
+        // --- DÉBUT GESTION DES TAGS ---
+        if ($post_id && !empty($_POST['tags'])) {
+            $tags_json = $_POST['tags'];
+            $tags_array = json_decode($tags_json);
+            
+            if (is_array($tags_array) && !empty($tags_array)) {
+                
+                $stmt_tag_find = mysqli_prepare($connect, "SELECT id FROM tags WHERE slug = ? LIMIT 1");
+                $stmt_tag_insert = mysqli_prepare($connect, "INSERT INTO tags (name, slug) VALUES (?, ?)");
+                $stmt_post_tag_insert = mysqli_prepare($connect, "INSERT INTO post_tags (post_id, tag_id) VALUES (?, ?)");
+                
+                foreach ($tags_array as $tag_obj) {
+                    $tag_name = $tag_obj->value;
+                    $tag_slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $tag_name), '-'));
+                    
+                    if (empty($tag_slug)) continue;
+
+                    // 1. Vérifier si le tag existe
+                    mysqli_stmt_bind_param($stmt_tag_find, "s", $tag_slug);
+                    mysqli_stmt_execute($stmt_tag_find);
+                    $result_tag = mysqli_stmt_get_result($stmt_tag_find);
+                    
+                    if ($row_tag = mysqli_fetch_assoc($result_tag)) {
+                        $tag_id = $row_tag['id'];
+                    } else {
+                        // 2. S'il n'existe pas, le créer
+                        mysqli_stmt_bind_param($stmt_tag_insert, "ss", $tag_name, $tag_slug);
+                        mysqli_stmt_execute($stmt_tag_insert);
+                        $tag_id = mysqli_insert_id($connect);
+                    }
+                    
+                    // 3. Lier le tag à l'article (ignorer si la liaison existe déjà)
+                    mysqli_stmt_bind_param($stmt_post_tag_insert, "ii", $post_id, $tag_id);
+                    @mysqli_stmt_execute($stmt_post_tag_insert); // Utiliser @ pour ignorer les erreurs de doublons si on ajoute un UNIQUE(post_id, tag_id)
+                }
+                
+                mysqli_stmt_close($stmt_tag_find);
+                mysqli_stmt_close($stmt_tag_insert);
+                mysqli_stmt_close($stmt_post_tag_insert);
+            }
+        }
+        // --- FIN GESTION DES TAGS ---
+
+        // ... (partie newsletter, reste inchangée) ...
         if ($post_id) {
             $from     = $settings['email'];
             $sitename = $settings['sitename'];
@@ -153,6 +194,11 @@ while ($rw = mysqli_fetch_assoc($crun)) {
 					</p>
 					
 					<p>
+						<label>Tags</label>
+						<input name="tags" class="form-control" value="" placeholder="php, javascript, css">
+						<i>Séparez les tags par une virgule ou Entrée.</i>
+					</p>
+					<p>
 						<label>Lien de téléchargement (.rar, .zip)</label>
 						<div class="input-group">
 							<span class="input-group-text"><i class="fas fa-file-archive"></i></span>
@@ -184,6 +230,21 @@ $(document).ready(function() {
 		noteBar.find('[data-toggle]').each(function() {
 		$(this).attr('data-bs-toggle', $(this).attr('data-toggle')).removeAttr('data-toggle');
 	});
+
+	// --- DÉBUT INITIALISATION TAGIFY ---
+	// Récupère l'élément input
+	var input = document.querySelector('input[name=tags]');
+	
+	// Initialise Tagify
+	new Tagify(input, {
+		// N'autorise que les tags qui n'existent pas déjà
+		duplicate: false, 
+		// Sépare les tags sur la touche "virgule"
+		delimiters: ",", 
+		// Ajoute un tag quand on clique en dehors du champ
+		addTagOnBlur: true 
+	});
+	// --- FIN INITIALISATION TAGIFY ---
 });
 </script>
 <?php

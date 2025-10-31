@@ -40,7 +40,7 @@ while ($row = mysqli_fetch_assoc($query)) {
 	echo '
 								</td>
                                 <td>' . $row['email'] . '</td>
-								<td data-sort="' . strtotime($row['date']) . '">' . date($settings['date_format'], strtotime($row['date'])) . ', ' . $row['time'] . '</td>
+								<td data-sort="' . strtotime($row['created_at']) . '">' . date($settings['date_format'] . ' H:i', strtotime($row['created_at'])) . '</td>
                                 <td>
                                     <a class="btn btn-success btn-sm" href="read_message.php?id=' . $row['id'] . '">
                                         <i class="fa fa-eye"></i> View

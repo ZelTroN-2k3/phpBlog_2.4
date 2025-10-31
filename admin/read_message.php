@@ -44,7 +44,7 @@ echo '
 			
 			<i class="fa fa-user"></i> Sender: <b>' . htmlspecialchars($row['name']) . '</b><br>
 			<i class="fa fa-envelope"></i> E-Mail Address: <b>' . htmlspecialchars($row['email']) . '</b><br>
-			<i class="fa fa-calendar-alt"></i> Date: <b>' . date($settings['date_format'], strtotime($row['date'])) . ', ' . $row['time'] . '</b><br><br />
+			<i class="fa fa-calendar-alt"></i> Date: <b>' . date($settings['date_format'] . ' H:i', strtotime($row['created_at'])) . '</b><br><br />
 			<i class="fa fa-file"></i> Message:<br><b>' . nl2br(htmlspecialchars($row['content'])) . '</b><br><hr>
 			  
 			<div class="row">

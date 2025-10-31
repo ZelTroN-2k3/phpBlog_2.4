@@ -55,7 +55,7 @@ while ($row = mysqli_fetch_assoc($query)) {
 	                <td>' . htmlspecialchars($row['filename']) . '</td>
 					<td>' . htmlspecialchars(filetype($row['path'])) . '</td>
 					<td>' . byte_convert(filesize($row['path'])) . '</td>
-					<td data-sort="' . strtotime($row['date']) . '">' . date($settings['date_format'], strtotime($row['date'])) . ', ' . $row['time'] . '</td>
+					<td data-sort="' . strtotime($row['created_at']) . '">' . date($settings['date_format'] . ' H:i', strtotime($row['created_at'])) . '</td>
 					<td>
 					    <a href="' . htmlspecialchars($row['path']) . '" target="_blank" class="btn btn-success btn-sm"><i class="fa fa-eye"></i> View</a>
 						<a href="?delete-id=' . $row['id'] . '" class="btn btn-danger btn-sm"><i class="fa fa-trash"></i> Delete</a>

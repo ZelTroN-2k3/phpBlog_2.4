@@ -213,7 +213,7 @@ if ($cmnts == "0") {
             </div>
             <div class="col-md-10">
                 <a href="comments.php?edit-id=' . $row['id'] . '">
-                    <span class="blue">Comment by <strong>' . htmlspecialchars($author_name) . ' </strong> on <strong>' . date($settings['date_format'], strtotime($row['date'])) . ', ' . $row['time'] . '</strong></span>
+                    <span class="blue">Comment by <strong>' . htmlspecialchars($author_name) . ' </strong> on <strong>' . date($settings['date_format'] . ' H:i', strtotime($row['created_at'])) . '</strong></span>
                 </a><br />
 ';
         if ($row['approved'] == "Yes") {
