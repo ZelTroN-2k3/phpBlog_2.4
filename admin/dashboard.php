@@ -172,7 +172,7 @@ echo $total;
                   <div class="card-body">
                     <div class="row">
 <?php
-// --- MODIFICATION : Requête unique pour les commentaires récents ---
+// --- MODIFICATION : Requête unique pour les commentaires récents (Priorité aux non-approuvés) ---
 $query = mysqli_query($connect, "
     SELECT 
         c.*,
@@ -182,7 +182,9 @@ $query = mysqli_query($connect, "
     FROM `comments` c
     JOIN `posts` p ON c.post_id = p.id
     LEFT JOIN `users` u ON c.user_id = u.id AND c.guest = 'No'
-    ORDER BY c.id DESC 
+    ORDER BY 
+        CASE WHEN c.approved = 'No' THEN 1 ELSE 2 END, -- Priorise les 'No'
+        c.id DESC -- Ensuite, trie par les plus récents
     LIMIT 4
 ");
 
@@ -223,7 +225,7 @@ if ($cmnts == "0") {
             echo '<span class="badge bg-info"><i class="fas fa-user"></i> Guest</span> ';
         }
         echo '
-                <p>' . htmlspecialchars(short_text($row['comment'], 100)) . '</p>
+                <p>' . htmlspecialchars(short_text(html_entity_decode($row['comment']), 100)) . '</p>
             </div>
 ';
     }

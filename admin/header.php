@@ -35,7 +35,7 @@ if (basename($_SERVER['SCRIPT_NAME']) != 'add_post.php'
  && basename($_SERVER['SCRIPT_NAME']) != 'settings.php'
  && basename($_SERVER['SCRIPT_NAME']) != 'newsletter.php') {
     $_GET  = filter_input_array(INPUT_GET, FILTER_SANITIZE_SPECIAL_CHARS);
-    $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_SPECIAL_CHARS);
+    //$_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_SPECIAL_CHARS);
 }
 
 if ($user['role'] == "Editor" && 

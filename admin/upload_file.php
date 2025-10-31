@@ -26,8 +26,7 @@ if (isset($_POST['upload'])) {
     // MODIFICATION : Suppression de date & time
     
     $format = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-    $allowed_formats = ["png", "gif", "jpeg", "jpg", "bmp", "doc", "docx", "pdf", "txt", "rar", "html", "zip", "odt", "rtf", "csv", "ods", "xls", "xlsx", "odp", "ppt", "pptx", "mp3", "flac", "wav", "wma", "aac", "m4a", "htm", "mov", "avi", "mkv", "mp4", "wmv", "webm", "ts", "webp", "svg"];
-
+    $allowed_formats = ["png", "gif", "jpeg", "jpg", "bmp", "doc", "docx", "pdf", "txt", "rar", "zip", "odt", "rtf", "csv", "ods", "xls", "xlsx", "odp", "ppt", "pptx", "mp3", "flac", "wav", "wma", "aac", "m4a", "mov", "avi", "mkv", "mp4", "wmv", "webm", "ts", "webp"];
     if (!in_array($format, $allowed_formats)) {
         echo '<br /><div class="alert alert-info">The uploaded file is with unallowed extension.<br />';
     } else {
