@@ -22,7 +22,7 @@ include "config.php";
 // Il est préférable de valider/assainir les entrées spécifiques au moment de leur utilisation.
 // Mais nous le gardons pour la cohérence avec votre code existant.
 $_GET  = filter_input_array(INPUT_GET, FILTER_SANITIZE_SPECIAL_CHARS);
-$_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_SPECIAL_CHARS);
+//$_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_SPECIAL_CHARS);
 
 if (!isset($_SESSION['sec-username'])) {
     $logged = 'No';
@@ -231,7 +231,7 @@ function display_comments($post_id, $parent_id = 0, $level = 0) {
                 </div>
                 <hr class="my-0" />
                 <p class="mt-1 mb-1 pb-1">
-                    ' . format_comment_with_code($comment['comment']) . '
+                    ' . format_comment_with_code(html_entity_decode($comment['comment'])) . '
                 </p>
                 <hr class="my-0" />
                 <div class="p-2">
@@ -327,7 +327,7 @@ function render_comment_html($comment_id, $margin_left = 0) {
             </div>
             <hr class="my-0" />
             <p class="mt-1 mb-1 pb-1">
-                <?php echo format_comment_with_code($comment['comment']); ?>
+                <?php echo format_comment_with_code(html_entity_decode($comment['comment'])); ?>
             </p>
             <hr class="my-0" />
                 <div class="p-2">

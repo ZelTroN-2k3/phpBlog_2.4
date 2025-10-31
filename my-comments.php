@@ -89,7 +89,7 @@ if ($count <= 0) {
 						</div>
 					</h6>
                     ' . $reply_info . '
-					<p class="card-text">' . format_comment_with_code($comment['comment'])  . '</p>
+					<p class="card-text">' . format_comment_with_code(html_entity_decode($comment['comment']))  . '</p>
 					<p class="card-text">
 						<div class="row">
 							<div class="col-md-10">
