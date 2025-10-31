@@ -944,7 +944,7 @@ if ($count <= 0) {
     while ($row = mysqli_fetch_assoc($run)) {
         // Utiliser htmlspecialchars
         echo '<a href="post?name=' . htmlspecialchars($row['slug']) . '">' . htmlspecialchars($row['title']) . '</a>
-        &nbsp;&;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;';
+        &nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;';
     }
 }
 ?>
