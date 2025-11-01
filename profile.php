@@ -12,12 +12,13 @@ if ($settings['sidebar_position'] == 'Left') {
 }
 ?>
     <div class="col-md-8 mb-3">
-            <div class="card">
-                <div class="card-header"><i class="fas fa-cog"></i> Account Settings</div>
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white"><i class="fas fa-cog"></i> Account Settings</div>
                     <div class="card-body">
 <?php
 $uname   = $_SESSION['sec-username'];
 $user_id = $rowu['id'];
+$message = '';
 
 if (isset($_POST['save'])) {
     
@@ -30,10 +31,6 @@ if (isset($_POST['save'])) {
     $avatar   = $rowu['avatar'];
     $password = $_POST['password']; // C'est le mot de passe en clair
     
-    // NOUVEAU : Récupérer la biographie
-    // Utiliser htmlspecialchars pour un encodage simple, 
-    // ou une bibliothèque comme HTMLPurifier pour autoriser du HTML sécurisé.
-    // Restons simple pour l'instant :
     $bio      = htmlspecialchars($_POST['bio']); 
     
     $emused = 'No';
@@ -62,23 +59,30 @@ if (isset($_POST['save'])) {
         if ($check !== false) {
             $uploadOk = 1;
         } else {
-            echo '<div class="alert alert-warning">File is not an image.';
+            $message .= '<div class="alert alert-danger">File is not an image.</div>';
             $uploadOk = 0;
         }
         
         // Check file size
         if ($_FILES["avafile"]["size"] > 1000000) {
-            echo '<div class="alert alert-warning">Sorry, your file is too large.</div>';
+            $message .= '<div class="alert alert-warning">Sorry, your file is too large. Max 1MB.</div>';
             $uploadOk = 0;
         }
         
         if ($uploadOk == 1) {
+            // Supprimer l'ancienne image si elle n'est pas celle par défaut
+            if ($rowu['avatar'] != 'assets/img/avatar.png' && file_exists($rowu['avatar'])) {
+                unlink($rowu['avatar']);
+            }
+            
             move_uploaded_file($_FILES["avafile"]["tmp_name"], "uploads/avatars/" . $filename);
             $avatar = "uploads/avatars/" . $filename;
         }
     }
     
-    if (filter_var($email, FILTER_VALIDATE_EMAIL) && $emused == 'No') {
+    if ($emused == 'Yes') {
+        $message .= '<div class="alert alert-danger">The E-Mail Address is already in use.</div>';
+    } elseif (filter_var($email, FILTER_VALIDATE_EMAIL) && $emused == 'No') {
         
         if ($password != null) {
             // MODIFICATION : Utiliser password_hash()
@@ -98,48 +102,73 @@ if (isset($_POST['save'])) {
             mysqli_stmt_close($stmt);
         }
         
+        // Afficher un message de succès (sauf si une erreur d'upload est apparue)
+        if (empty($message)) {
+            $message = '<div class="alert alert-success">Account settings updated successfully!</div>';
+        }
+
+        // Recharger la page (après un court délai pour afficher le succès)
+        echo $message;
+        echo '<meta http-equiv="refresh" content="1;url=profile">';
+        exit;
     }
     
-    echo '<meta http-equiv="refresh" content="0;url=profile">';
+    // Si l'e-mail est invalide ou une erreur d'upload a eu lieu sans rediriger
+    if ($message) {
+         echo $message;
+    }
 }
 ?>
 <form method="post" action="" enctype="multipart/form-data">
                         <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
-                        <label for="username"><i class="fa fa-user"></i> Username:</label>
-                        <input type="text" name="username" id="username" value="<?php
-echo htmlspecialchars($rowu['username']);
-?>" class="form-control" required />
-                        <br />
-									
-						<label for="email"><i class="fa fa-envelope"></i> E-Mail Address:</label>
-                        <input type="email" name="email" id="email" value="<?php
-echo htmlspecialchars($rowu['email']);
-?>" class="form-control" required />
-                        <br />
-									
-						<label for="avatar"><i class="fa fa-image"></i> Avatar:</label>
-                        <center><img src="<?php
-echo htmlspecialchars($rowu['avatar']);
-?>" width="12%"></center>
-                        <div class="custom-file">
-                            <input type="file" class="form-control" name="avafile" accept="image/*" id="avatarfile">
-                        </div><br /><br />
                         
-                        <label for="bio"><i class="fa fa-info-circle"></i> Biographie :</label>
-                        <textarea name="bio" id="bio" rows="4" class="form-control"><?php
-// htmlspecialchars_decode est nécessaire si vous avez utilisé htmlspecialchars à l'enregistrement
-// Si $bio est stocké en HTML brut, utilisez htmlspecialchars() pour l'affichage
-echo htmlspecialchars($rowu['bio'] ?? ''); // ?? '' pour gérer les valeurs NULL
-?></textarea>
-                        <i>Une courte biographie qui apparaîtra sur votre profil public.</i>
-						<br /><br />
-                        <label for="name"><i class="fa fa-key"></i> Password:</label>
-                        <input type="password" name="password" id="name" value="" class="form-control" />
-                        <i>Fill this field only if you want to change your password.</i>
-						<br /><br />
+                        <div class="form-group mb-3">
+                            <label for="username"><i class="fa fa-user"></i> Username:</label>
+                            <input type="text" name="username" id="username" value="<?php
+    echo htmlspecialchars($rowu['username']);
+    ?>" class="form-control" required />
+                        </div>
+									
+						<div class="form-group mb-3">
+                            <label for="email"><i class="fa fa-envelope"></i> E-Mail Address:</label>
+                            <input type="email" name="email" id="email" value="<?php
+    echo htmlspecialchars($rowu['email']);
+    ?>" class="form-control" required />
+                        </div>
+									
+						<div class="form-group mb-3">
+                            <label for="avatar"><i class="fa fa-image"></i> Avatar:</label>
+                            <div class="text-center mb-3">
+                                <img src="<?php
+    echo htmlspecialchars($rowu['avatar']);
+    ?>" width="100px" height="100px" style="object-fit: cover; border-radius: 50%; border: 3px solid #ddd;">
+                            </div>
+                            <div class="custom-file">
+                                <input type="file" class="form-control" name="avafile" accept="image/*" id="avatarfile">
+                                <small class="form-text text-muted">Max file size: 1 MB. Upload a new image to replace the current one.</small>
+                            </div>
+						</div>
+                        
+                        <div class="form-group mb-3">
+                            <label for="bio"><i class="fa fa-info-circle"></i> Biographie :</label>
+                            <textarea name="bio" id="bio" rows="4" class="form-control"><?php
+    // htmlspecialchars_decode est nécessaire si vous avez utilisé htmlspecialchars à l'enregistrement
+    // Si $bio est stocké en HTML brut, utilisez htmlspecialchars() pour l'affichage
+    echo htmlspecialchars($rowu['bio'] ?? ''); // ?? '' pour gérer les valeurs NULL
+    ?></textarea>
+                            <small class="form-text text-muted">Une courte biographie qui apparaîtra sur votre profil public.</small>
+						</div>
+                        
+                        <div class="form-group mb-3">
+                            <label for="name"><i class="fa fa-key"></i> Password:</label>
+                            <input type="password" name="password" id="name" value="" class="form-control" />
+                            <small class="form-text text-muted">Fill this field only if you want to change your password.</small>
+						</div>
 
-                        <input type="submit" name="save" class="btn btn-primary col-12" value="Update" />
-                        </form>
+                        <div class="form-actions mt-4">
+                            <input type="submit" name="save" class="btn btn-primary col-12" value="Update" />
+                        </div>
+                    </form>
                     </div>
 			    </div>
 			</div>

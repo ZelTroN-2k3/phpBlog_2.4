@@ -2,11 +2,6 @@
 include "core.php";
 head();
 
-if ($settings['sidebar_position'] == 'Left') {
-	sidebar();
-}
-
-// 1. Vérifier si l'utilisateur est connecté
 if ($logged == 'No') {
     echo '<meta http-equiv="refresh" content="0;url=login">';
     exit;
@@ -25,11 +20,16 @@ if (isset($_GET['remove-favorite'])) {
     
     // Recharger la page sans le paramètre GET
     echo '<meta http-equiv="refresh" content="0;url=my-favorites.php">';
+    exit;
+}
+
+if ($settings['sidebar_position'] == 'Left') {
+	sidebar();
 }
 ?>
     <div class="col-md-8 mb-3">
-        <div class="card">
-            <div class="card-header"><i class="fas fa-bookmark"></i> My favorites</div>
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white"><i class="fas fa-bookmark"></i> My favorites</div>
             <div class="card-body">
 
 <?php
@@ -50,23 +50,33 @@ if ($count <= 0) {
 } else {
     // 3. Afficher chaque article (similaire à blog.php)
     while ($row = mysqli_fetch_array($query)) {
+        
+        $image = "";
+        if($row['image'] != "") {
+            $image = '<img src="' . htmlspecialchars($row['image']) . '" alt="' . htmlspecialchars($row['title']) . '" class="rounded-start" width="100%" height="100%" style="object-fit: cover;">';
+        } else {
+            $image = '<svg class="bd-placeholder-img rounded-start" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder: Thumbnail" preserveAspectRatio="xMidYMid slice" focusable="false">
+            <title>No Image</title><rect width="100%" height="100%" fill="#55595c"/>
+            <text x="37%" y="50%" fill="#eceeef" dy=".3em">No Image</text></svg>';
+        }
+
         echo '
 			<div class="card mb-3">
 			  <div class="row g-0">
 				<div class="col-md-4">
                   <a href="post?name=' . htmlspecialchars($row['slug']) . '">
-                    <img src="' . htmlspecialchars($row['image']) . '" alt="' . htmlspecialchars($row['title']) . '" class="rounded-start" width="100%" height="150px" style="object-fit: cover;">
+                    ' . $image . '
                   </a>
                 </div>
 				<div class="col-md-8">
-				  <div class="card-body">
-					<h6 class="card-title">
+				  <div class="card-body py-3">
+					<h6 class="card-title mb-2">
 						<div class="row">
-							<div class="col-md-10">
-								<a href="post?name=' . htmlspecialchars($row['slug']) . '">' . htmlspecialchars($row['title']) . '</a>
+							<div class="col-md-9">
+								<a href="post?name=' . htmlspecialchars($row['slug']) . '" class="text-primary">' . htmlspecialchars($row['title']) . '</a>
 							</div>
-							<div class="col-md-2 d-flex justify-content-end">
-								<a href="?remove-favorite=' . $row['id'] . '" class="btn btn-danger btn-sm" title="Retirer des favoris">
+							<div class="col-md-3 d-flex justify-content-end">
+								<a href="?remove-favorite=' . $row['id'] . '" class="btn btn-danger btn-sm" title="Retirer des favoris" onclick="return confirm(\'Remove this post from your favorites?\');">
 									<i class="fa fa-trash"></i>
 								</a>
 							</div>
@@ -75,7 +85,7 @@ if ($count <= 0) {
 					<p class="card-text">' . short_text(strip_tags(html_entity_decode($row['content'])), 150) . '</p>
 					<p class="card-text">
                         <small class="text-muted">
-                            <i class="far fa-calendar-alt"></i> ' . date($settings['date_format'], strtotime($row['created_at'])) . '
+                            <i class="far fa-calendar-alt"></i> Added: ' . date($settings['date_format'], strtotime($row['created_at'])) . '
                         </small>
                     </p>
 				  </div>

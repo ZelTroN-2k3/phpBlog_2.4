@@ -7,57 +7,57 @@ if ($settings['sidebar_position'] == 'Left') {
 }
 ?>
         <div class="col-md-8 mb-3">
-            <div class="card">
-                <div class="card-header"><i class="fas fa-envelope"></i> Contact</div>
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white"><i class="fas fa-envelope"></i> Contact</div>
                     <div class="card-body">
 
-                    <h5 class="mb-3">Social Profiles</h5>
-                        <div class="list-group">
-							<a class="list-group-item list-group-item-action" href="mailto:<?php
-echo $settings['email'];
+                    <h5 class="mb-3"><i class="fas fa-share-alt"></i> Social Profiles</h5>
+                        <div class="list-group mb-4">
+							<a class="list-group-item list-group-item-action list-group-item-light" href="mailto:<?php
+echo htmlspecialchars($settings['email']);
 ?>" target="_blank"><i class="fa fa-envelope"></i><span>&nbsp; E-Mail: <strong><?php
-echo $settings['email'];
-?></span></strong></a>
+echo htmlspecialchars($settings['email']);
+?></strong></span></a>
 <?php
 if ($settings['facebook'] != '') {
 ?>
 							<a class="list-group-item list-group-item-primary list-group-item-action" href="<?php
-echo $settings['facebook'];
+echo htmlspecialchars($settings['facebook']);
 ?>" target="_blank"><strong><i class="fab fa-facebook-square"></i>&nbsp; Facebook</strong></a>
 <?php
 }
 if ($settings['instagram'] != '') {
 ?>
 							<a class="list-group-item list-group-item-warning list-group-item-action" href="<?php
-echo $settings['instagram'];
-?>" target="_blank"><strong><i class="fab fa-instagram"></i>&nbsp; Instagram</strong></a>
+echo htmlspecialchars($settings['instagram']);
+?>" target="_blank" style="background-color: #e8d098!important; border-color: #e8d098!important;"><strong><i class="fab fa-instagram"></i>&nbsp; Instagram</strong></a>
 <?php
 }
 if ($settings['twitter'] != '') {
 ?>
 							<a class="list-group-item list-group-item-info list-group-item-action" href="<?php
-echo $settings['twitter'];
+echo htmlspecialchars($settings['twitter']);
 ?>" target="_blank"><strong><i class="fab fa-twitter-square"></i>&nbsp; Twitter</strong></a>
 <?php
 }
 if ($settings['youtube'] != '') {
 ?>	
 							<a class="list-group-item list-group-item-danger list-group-item-action" href="<?php
-echo $settings['youtube'];
+echo htmlspecialchars($settings['youtube']);
 ?>" target="_blank"><strong><i class="fab fa-youtube-square"></i>&nbsp; YouTube</strong></a>
 <?php
 }
 if ($settings['linkedin'] != '') {
 ?>	
 							<a class="list-group-item list-group-item-primary list-group-item-action" href="<?php
-echo $settings['linkedin'];
+echo htmlspecialchars($settings['linkedin']);
 ?>" target="_blank"><strong><i class="fab fa-linkedin"></i>&nbsp; LinkedIn</strong></a>
 <?php
 }
 ?>	        
                         </div>
             
-                        <h5 class="mt-4 mb-2">Leave Your Message</h5>
+                        <h5 class="mt-4 mb-3"><i class="far fa-paper-plane"></i> Leave Your Message</h5>
 <?php
 if (isset($_POST['send'])) {
     
@@ -72,17 +72,16 @@ if (isset($_POST['send'])) {
         $name = $rowu['username'];
         $email = $rowu['email'];
     }
-    $content = $_POST['text']; // Le htmlspecialchars sera fait à l'affichage
+    $content = $_POST['text'];
     
-    // MODIFICATION : Suppression de date & time
-	
-	$captcha = '';
+    $captcha = '';
     
     if (isset($_POST['g-recaptcha-response'])) {
         $captcha = $_POST['g-recaptcha-response'];
     }
     
-    // Vous devriez vérifier si $captcha n'est pas vide
+    $message_status = '';
+    
     if (!empty($captcha)) {
         $url          = 'https://www.google.com/recaptcha/api/siteverify?secret=' . urlencode($settings['gcaptcha_secretkey']) . '&response=' . urlencode($captcha);
         $response     = file_get_contents($url);
@@ -90,7 +89,7 @@ if (isset($_POST['send'])) {
         
         if ($responseKeys["success"]) {
             if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                echo '<div class="alert alert-danger">The entered E-Mail Address is invalid.</div>';
+                $message_status = '<div class="alert alert-danger">The entered E-Mail Address is invalid.</div>';
             } else {
                 // MODIFICATION : Mise à jour de la requête
                 $stmt = mysqli_prepare($connect, "INSERT INTO messages (name, email, content, created_at) VALUES(?, ?, ?, NOW())");
@@ -99,14 +98,16 @@ if (isset($_POST['send'])) {
                 mysqli_stmt_execute($stmt);
                 mysqli_stmt_close($stmt);
                 
-                echo '<div class="alert alert-success">Your message has been sent successfully.</div>';
+                $message_status = '<div class="alert alert-success">Your message has been sent successfully.</div>';
             }
         } else {
-             echo '<div class="alert alert-danger">Failed to verify reCAPTCHA.</div>';
+             $message_status = '<div class="alert alert-danger">Failed to verify reCAPTCHA.</div>';
         }
     } else {
-        echo '<div class="alert alert-danger">Please complete the reCAPTCHA.</div>';
+        $message_status = '<div class="alert alert-danger">Please complete the reCAPTCHA.</div>';
     }
+    
+    echo $message_status;
 }
 ?>
                         <form method="post" action="">
@@ -114,22 +115,28 @@ if (isset($_POST['send'])) {
                             <?php
 if ($logged == 'No') {
 ?>
-                            <label for="name"><i class="fa fa-user"></i> Name:</label>
-                            <input type="text" name="name" id="name" value="" class="form-control" required />
-                            <br />
+                            <div class="form-group mb-3">
+                                <label for="name"><i class="fa fa-user"></i> Name:</label>
+                                <input type="text" name="name" id="name" value="" class="form-control" required />
+                            </div>
 									
-                            <label for="email"><i class="fa fa-envelope"></i> E-Mail Address:</label>
-                            <input type="email" name="email" id="email" value="" class="form-control" required />
-                            <br />
+                            <div class="form-group mb-3">
+                                <label for="email"><i class="fa fa-envelope"></i> E-Mail Address:</label>
+                                <input type="email" name="email" id="email" value="" class="form-control" required />
+                            </div>
 <?php
 }
 ?>
-                            <label for="input-message"><i class="far fa-file-alt"></i> Message:</label>
-                            <textarea name="text" id="input-message" rows="8" class="form-control" required></textarea>
+                            <div class="form-group mb-3">
+                                <label for="input-message"><i class="far fa-file-alt"></i> Message:</label>
+                                <textarea name="text" id="input-message" rows="8" class="form-control" required></textarea>
+                            </div>
 
-                            <br /><center><div class="g-recaptcha" data-sitekey="<?php
+                            <div class="text-center mb-3">
+                                <div class="g-recaptcha" data-sitekey="<?php
 echo $settings['gcaptcha_sitekey'];
-?>"></div></center>
+?>"></div>
+                            </div>
 
                             <input type="submit" name="send" class="btn btn-primary col-12" value="Send" />
                         </form>

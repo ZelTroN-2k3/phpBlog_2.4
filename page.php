@@ -19,19 +19,20 @@ if (mysqli_num_rows($run) == 0) {
 }
 
 $row = mysqli_fetch_assoc($run);
-echo '
-            <div class="col-md-8 mb-3">
+?>
 
-                <div class="card">
-                    <div class="card-header">' . $row['title'] . '</div>
-                    <div class="card-body">
-                       ' . html_entity_decode($row['content']) . '
-                    </div>
-                </div>
-					
-			</div>
-';
+<div class="col-md-8 mb-3">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <i class="fas fa-file-alt"></i> <?php echo htmlspecialchars($row['title']); ?>
+        </div>
+        <div class="card-body">
+           <?php echo html_entity_decode($row['content']); ?>
+        </div>
+    </div>
+</div>
 
+<?php
 if ($settings['sidebar_position'] == 'Right') {
 	sidebar();
 }

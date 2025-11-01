@@ -15,7 +15,7 @@ if ($count > 0) {
     $i = 0;
     $mt3_i = "mt-3";
 ?>
-<div id="carouselExampleCaptions" class="col-md-12 carousel slide" data-bs-ride="carousel">
+<div id="carouselExampleCaptions" class="col-md-12 carousel slide mb-3 shadow-lg" data-bs-ride="carousel">
 	<div class="carousel-indicators">
 <?php
     while ($row = mysqli_fetch_assoc($run)) {
@@ -24,7 +24,7 @@ if ($count > 0) {
             $active1 = 'class="active" aria-current="true"';
         }
         
-        echo '<button type="button" data-bs-target="#carouselExampleCaptions" data-bs-slide-to="' . $i . '" '. $active1 .' aria-label="' . $row['title'] . '"></button>
+        echo '<button type="button" data-bs-target="#carouselExampleCaptions" data-bs-slide-to="' . $i . '" '. $active1 .' aria-label="' . htmlspecialchars($row['title']) . '"></button>
         ';
         
         $i++;
@@ -43,22 +43,22 @@ if ($count > 0) {
         
         $image = "";
         if($row2['image'] != "") {
-            $image = '<img src="' . $row2['image'] . '" alt="' . $row2['title'] . '" class="d-block w-100" height="400">';
+            $image = '<img src="' . htmlspecialchars($row2['image']) . '" alt="' . htmlspecialchars($row2['title']) . '" class="d-block w-100" height="400" style="object-fit: cover;">';
         } else {
             $image = '<svg class="bd-placeholder-img bd-placeholder-img-lg d-block w-100" height="400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="No Image" preserveAspectRatio="xMidYMid slice" focusable="false">
-						<title>' . $row2['title'] . '</title>
+						<title>' . htmlspecialchars($row2['title']) . '</title>
 						<rect width="100%" height="100%" fill="#555"></rect>
 						<text x="45%" y="50%" fill="black" dy=".3em">No Image</text></svg>';
         }
 
         echo '
         <div class="carousel-item'. $active .'">
-            <a href="post?name=' . $row2['slug'] . '">' . $image . '</a>
-            <div class="carousel-caption d-md-block">
+            <a href="post?name=' . htmlspecialchars($row2['slug']) . '">' . $image . '</a>
+            <div class="carousel-caption d-md-block" style="background: rgba(0,0,0,0.5); padding: 10px;">
                 <h5>
-					<a href="post?name=' . $row2['slug'] . '" class="text-light" style="text-shadow: 1px 1px black;">' . $row2['title'] . '</a>
+					<a href="post?name=' . htmlspecialchars($row2['slug']) . '" class="text-light text-decoration-none">' . htmlspecialchars($row2['title']) . '</a>
 				</h5>
-				<p class="text-light" style="text-shadow: 1px 1px black;">
+				<p class="text-light">
 					<i class="fas fa-calendar"></i> ' . date($settings['date_format'] . ' H:i', strtotime($row2['created_at'])) . '
 				</p>
             </div>
@@ -94,7 +94,7 @@ if ($count <= 0) {
         
         $image = "";
         if($row['image'] != "") {
-            $image = '<img src="' . $row['image'] . '" alt="' . $row['title'] . '" class="card-img-top" width="100%" height="208em" />';
+            $image = '<img src="' . htmlspecialchars($row['image']) . '" alt="' . htmlspecialchars($row['title']) . '" class="card-img-top" width="100%" height="208em" style="object-fit: cover;"/>';
         } else {
             $image = '<svg class="bd-placeholder-img card-img-top" width="100%" height="13em" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder: Thumbnail" preserveAspectRatio="xMidYMid slice" focusable="false">
             <title>No Image</title><rect width="100%" height="100%" fill="#55595c"/>
@@ -109,13 +109,14 @@ if ($settings['posts_per_row'] == 3) {
 	echo 'col-md-6';
 }
 echo ' mb-3"> 
-                        <div class="card shadow-sm">
-                            <a href="post?name=' . $row['slug'] . '">
+                        <div class="card shadow-sm h-100 d-flex flex-column">
+                            <a href="post?name=' . htmlspecialchars($row['slug']) . '">
                                 '. $image .'
                             </a>
-                            <div class="card-body">
-                                <a href="post?name=' . $row['slug'] . '"><h6 class="card-title">' . $row['title'] . '</h6></a>
-                                <div class="d-flex justify-content-between align-items-center">
+                            <div class="card-body d-flex flex-column flex-grow-1">
+                                <a href="post?name=' . htmlspecialchars($row['slug']) . '" class="text-decoration-none"><h6 class="card-title text-primary">' . htmlspecialchars($row['title']) . '</h6></a>
+                                
+                                <div class="d-flex justify-content-between align-items-center mb-2">
                                     <div>
                                         <small class="text-muted d-block"> <i class="far fa-calendar-alt"></i> ' . date($settings['date_format'] . ' H:i', strtotime($row['created_at'])) . '
                                         </small>
@@ -123,26 +124,26 @@ echo ' mb-3">
                                             ' . get_reading_time($row['content']) . '
                                         </small>
                                         </div>
-                                    <div>
-                                        <small class="me-2"><i class="fas fa-comments"></i> 
-                                            <a href="post?name=' . $row['slug'] . '#comments" class="blog-comments">
+                                    <div class="text-end">
+                                        <small class="me-2 text-muted"><i class="fas fa-comments"></i> 
+                                            <a href="post?name=' . htmlspecialchars($row['slug']) . '#comments" class="blog-comments text-decoration-none">
                                                 <strong>' . post_commentscount($row['id']) . '</strong>
                                             </a>
                                         </small>
-                                        <small><i class="fas fa-thumbs-up"></i> 
+                                        <small class="text-muted"><i class="fas fa-thumbs-up"></i> 
                                             <strong>' . get_post_like_count($row['id']) . '</strong>
                                         </small>
                                     </div>
                                 </div>
-								<div class="d-flex justify-content-between align-items-center">
-                                    <a href="category?name=' . post_categoryslug($row['category_id']) . '">
+								<div class="d-flex justify-content-between align-items-center mb-2">
+                                    <a href="category?name=' . post_categoryslug($row['category_id']) . '" class="text-decoration-none">
 										<span class="badge bg-secondary">' . post_category($row['category_id']) . '</span>
 									</a>
                                 </div>
 
                                 <p class="card-text mt-2">' . short_text(strip_tags(html_entity_decode($row['content'])), 100) . '</p>
 
-								<a href="post?name=' . $row['slug'] . '" class="btn btn-sm btn-primary col-12">
+								<a href="post?name=' . htmlspecialchars($row['slug']) . '" class="btn btn-sm btn-primary col-12 mt-auto">
 									Read more
 								</a>
                             </div>
@@ -153,7 +154,7 @@ echo ' mb-3">
 }
 ?>
             </div>
-            <a href="blog" class="btn btn-primary col-12">
+            <a href="blog" class="btn btn-primary col-12 mt-3">
 				<i class="fas fa-arrow-alt-circle-right"></i> All posts
 			</a>
         </div>

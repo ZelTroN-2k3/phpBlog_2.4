@@ -11,7 +11,7 @@
   'twitter' => '',
   'youtube' => '',
   'linkedin' => '',
-  'comments' => 'registered',
+  'comments' => 'guests',
   'rtl' => 'No',
   'date_format' => 'd.m.Y',
   'layout' => 'Boxed',
