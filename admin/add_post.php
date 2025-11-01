@@ -2,6 +2,11 @@
 include "header.php";
 
 if (isset($_POST['add'])) {
+    
+    // --- NOUVEL AJOUT : Validation CSRF ---
+    validate_csrf_token();
+    // --- FIN AJOUT ---
+
     $title       = $_POST['title'];
     $slug        = generateSeoURL($title);
     $active      = $_POST['active']; // Sera "Draft", "Yes" ou "No"
@@ -156,7 +161,8 @@ if (isset($_POST['add'])) {
         <h6 class="card-header">Add Post</h6>         
             <div class="card-body">
                 <form name="post_form" action="" method="post" enctype="multipart/form-data">
-					<p>
+                    <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                    <p>
 						<label>Title</label>
 						<input class="form-control" name="title" id="title" value="" type="text" oninput="countText()" required>
 						<i>For best SEO keep title under 50 characters.</i>

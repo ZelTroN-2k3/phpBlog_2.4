@@ -58,7 +58,7 @@ while ($row = mysqli_fetch_assoc($query)) {
 					<td data-sort="' . strtotime($row['created_at']) . '">' . date($settings['date_format'] . ' H:i', strtotime($row['created_at'])) . '</td>
 					<td>
 					    <a href="' . htmlspecialchars($row['path']) . '" target="_blank" class="btn btn-success btn-sm"><i class="fa fa-eye"></i> View</a>
-						<a href="?delete-id=' . $row['id'] . '" class="btn btn-danger btn-sm"><i class="fa fa-trash"></i> Delete</a>
+						<a href="?delete-id=' . $row['id'] . '&token=' . $csrf_token . '" class="btn btn-danger btn-sm"><i class="fa fa-trash"></i> Delete</a>
 					</td>
                 </tr>
 ';

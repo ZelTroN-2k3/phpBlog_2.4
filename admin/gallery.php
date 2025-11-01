@@ -33,6 +33,10 @@ if (isset($_GET['edit-id'])) {
     }
     
     if (isset($_POST['edit'])) {
+        // --- NOUVEL AJOUT : Validation CSRF ---
+        validate_csrf_token();
+        // --- FIN AJOUT ---
+        
         $title       = $_POST['title'];
         $image       = $row['image'];
         $active      = $_POST['active'];
@@ -84,7 +88,8 @@ if (isset($_GET['edit-id'])) {
 		  <h6 class="card-header">Edit Image</h6>         
               <div class="card-body">
 				  <form action="" method="post" enctype="multipart/form-data">
-					  <p>
+                    <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                    <p>
 						  <label>Title</label>
 						  <input class="form-control" name="title" type="text" value="<?php
     echo htmlspecialchars($row['title']);
@@ -181,7 +186,7 @@ while ($row = mysqli_fetch_assoc($sql)) {
 					<td>' . htmlspecialchars($album_title) . '</td>
 					<td>
 					    <a href="?edit-id=' . $row['id'] . '" class="btn btn-primary btn-sm"><i class="fa fa-edit"></i> Edit</a>
-						<a href="?delete-id=' . $row['id'] . '" class="btn btn-danger btn-sm"><i class="fa fa-trash"></i> Delete</a>
+						<a href="?delete-id=' . $row['id'] . '&token=' . $csrf_token . '" class="btn btn-danger btn-sm"><i class="fa fa-trash"></i> Delete</a>
 					</td>
                 </tr>
 ';

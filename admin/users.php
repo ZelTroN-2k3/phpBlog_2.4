@@ -40,6 +40,10 @@ if (isset($_GET['edit-id'])) {
     }
     
     if (isset($_POST['edit'])) {
+        // --- NOUVEL AJOUT : Validation CSRF ---
+        validate_csrf_token();
+        // --- FIN AJOUT ---
+        
         $role = $_POST['role'];
         
         // Use prepared statement for UPDATE
@@ -55,7 +59,8 @@ if (isset($_GET['edit-id'])) {
               <h6 class="card-header">Edit User</h6>         
                   <div class="card-body">
                     <form action="" method="post">
-						<div class="form-group">
+                        <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                        <div class="form-group">
 							<label class="control-label">Username: </label>
 							<input type="text" name="username" class="form-control" value="<?php
     echo htmlspecialchars($row['username']);
@@ -100,6 +105,8 @@ if (isset($_GET['edit-id'])) {
 			<div class="card">
               <h6 class="card-header">Users</h6>         
                   <div class="card-body">
+                  
+                    <a href="add_user.php" class="btn btn-primary col-12 mb-3"><i class="fa fa-plus"></i> Ajouter un utilisateur</a>
                     <table id="dt-basic" class="table table-border table-hover bootstrap-datatable" width="100%">
                           <thead>
                               <tr>
@@ -132,7 +139,7 @@ while ($row = mysqli_fetch_assoc($query)) {
                                     <a class="btn btn-primary btn-sm" href="?edit-id=' . $row['id'] . '">
                                         <i class="fa fa-edit"></i> Edit
                                     </a>
-                                    <a class="btn btn-danger btn-sm" href="?delete-id=' . $row['id'] . '">
+                                    <a class="btn btn-danger btn-sm" href="?delete-id=' . $row['id'] . '&token=' . $csrf_token . '">
                                         <i class="fa fa-trash"></i> Delete
                                     </a>
                                 </td>

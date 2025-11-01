@@ -44,3 +44,17 @@ a:visited {
 		right: 8px;
 	}
 }
+
+/* --- AJOUT STYLES MODE SOMBRE --- */
+.theme-switcher {
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0.375rem 0.75rem; /* Aligner avec les autres nav-links */
+}
+
+/* Assurer que l'icône s'aligne bien */
+.theme-switcher i {
+    font-size: 1rem;
+    vertical-align: middle;
+}

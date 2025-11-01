@@ -121,6 +121,10 @@ if (isset($_GET['edit-id'])) {
     }
     
     if (isset($_POST['submit'])) {
+        // --- NOUVEL AJOUT : Validation CSRF ---
+        validate_csrf_token();
+        // --- FIN AJOUT ---
+        
         $page    = $_POST['page'];
         $path    = $_POST['path'];
         $fa_icon = $_POST['fa_icon'];
@@ -138,7 +142,8 @@ if (isset($_GET['edit-id'])) {
               <h6 class="card-header">Edit Menu</h6>         
                   <div class="card-body">
                   <form action="" method="post">
-                  <p>
+                    <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                    <p>
                   	<label>Page</label>
                   	<input name="page" class="form-control" type="text" value="<?php
 echo htmlspecialchars($row['page']);
@@ -197,17 +202,17 @@ while ($row = mysqli_fetch_assoc($query)) {
 ';
 if ($first == false) {
 echo '
-                    <a href="?up-id=' . $row['id'] . '" title="Move Up" class="btn btn-secondary btn-sm"><i class="fa fa-arrow-up"></i></a>
+                    <a href="?up-id=' . $row['id'] . '&token=' . $csrf_token . '" title="Move Up" class="btn btn-secondary btn-sm"><i class="fa fa-arrow-up"></i></a>
 ';
 }
 if ($row['id'] != $last_id) {
 echo '
-                    <a href="?down-id=' . $row['id'] . '" title="Move Down" class="btn btn-secondary btn-sm"><i class="fa fa-arrow-down"></i></a>
+                    <a href="?down-id=' . $row['id'] . '&token=' . $csrf_token . '" title="Move Down" class="btn btn-secondary btn-sm"><i class="fa fa-arrow-down"></i></a>
 ';
 }
 echo '
                     <a href="?edit-id=' . $row['id'] . '" class="btn btn-primary btn-sm"><i class="fa fa-edit"></i> Edit</a>
-                    <a href="?delete-id=' . $row['id'] . '" class="btn btn-danger btn-sm"><i class="fa fa-trash"></i> Delete</a>
+                    <a href="?delete-id=' . $row['id'] . '&token=' . $csrf_token . '" class="btn btn-danger btn-sm"><i class="fa fa-trash"></i> Delete</a>
                 </td>
             </tr>
 ';

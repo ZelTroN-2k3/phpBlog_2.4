@@ -38,6 +38,10 @@ if (isset($_GET['edit-id'])) {
     }
     
     if (isset($_POST['submit'])) {
+        // --- NOUVEL AJOUT : Validation CSRF ---
+        validate_csrf_token();
+        // --- FIN AJOUT ---
+        
         $title = $_POST['title'];
 
         // Use prepared statement for UPDATE
@@ -53,7 +57,8 @@ if (isset($_GET['edit-id'])) {
               <h6 class="card-header">Edit Album</h6>         
                   <div class="card-body">
                       <form action="" method="post">
-						<p>
+                        <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                        <p>
                           <label>Title</label>
                           <input class="form-control" name="title" type="text" value="<?php
     echo htmlspecialchars($row['title']); // Prevent XSS
@@ -88,7 +93,7 @@ while ($row = mysqli_fetch_assoc($result)) {
 	                <td>' . $row['title'] . '</td>
 					<td>
 					    <a href="?edit-id=' . $row['id'] . '" class="btn btn-primary btn-sm"><i class="fa fa-edit"></i> Edit</a>
-						<a href="?delete-id=' . $row['id'] . '" class="btn btn-danger btn-sm"><i class="fa fa-trash"></i> Delete</a>
+						<a href="?delete-id=' . $row['id'] . '&token=' . $csrf_token . '" class="btn btn-danger btn-sm"><i class="fa fa-trash"></i> Delete</a>
 					</td>
                 </tr>
 ';

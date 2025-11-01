@@ -1,7 +1,7 @@
 <?php
-include '../config.php';
-
-session_start();
+// MODIFICATION : Inclure core.php pour avoir accès aux fonctions et à la session
+include '../core.php'; 
+// session_start() est déjà dans core.php
 
 if (isset($_SESSION['sec-username'])) {
     $uname = $_SESSION['sec-username'];
@@ -24,6 +24,17 @@ if (isset($_SESSION['sec-username'])) {
     exit;
 }
 
+// --- NOUVEL AJOUT : Validation CSRF pour les actions GET ---
+// Définir une variable simple pour le jeton
+$csrf_token = $_SESSION['csrf_token'];
+
+// Si une action GET dangereuse est détectée, valider le jeton
+if (isset($_GET['delete-id']) || isset($_GET['up-id']) || isset($_GET['down-id']) || isset($_GET['delete_bgrimg']) || isset($_GET['unsubscribe'])) {
+    validate_csrf_token_get();
+}
+// --- FIN AJOUT ---
+
+
 if (basename($_SERVER['SCRIPT_NAME']) != 'add_post.php' 
  && basename($_SERVER['SCRIPT_NAME']) != 'posts.php' 
  && basename($_SERVER['SCRIPT_NAME']) != 'add_page.php' 
@@ -34,7 +45,8 @@ if (basename($_SERVER['SCRIPT_NAME']) != 'add_post.php'
  && basename($_SERVER['SCRIPT_NAME']) != 'gallery.php'
  && basename($_SERVER['SCRIPT_NAME']) != 'settings.php'
  && basename($_SERVER['SCRIPT_NAME']) != 'newsletter.php') {
-    $_GET  = filter_input_array(INPUT_GET, FILTER_SANITIZE_SPECIAL_CHARS);
+    // Ne pas filtrer $_GET ici pour permettre la validation du token
+    // $_GET  = filter_input_array(INPUT_GET, FILTER_SANITIZE_SPECIAL_CHARS); 
     //$_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_SPECIAL_CHARS);
 }
 
@@ -53,17 +65,8 @@ if ($user['role'] == "Editor" &&
     exit;
 }
 
-function short_text($text, $length)
-{
-    $maxTextLenght = $length;
-    $aspace        = " ";
-    if (strlen($text) > $maxTextLenght) {
-        $text = substr(trim($text), 0, $maxTextLenght);
-        $text = substr($text, 0, strlen($text) - strpos(strrev($text), $aspace));
-        $text = $text . '...';
-    }
-    return $text;
-}
+// --- MODIFICATION : short_text() et post_author() ont été SUPPRIMÉES ---
+// Elles sont maintenant chargées depuis core.php
 
 function byte_convert($size)
 {
@@ -77,27 +80,6 @@ function byte_convert($size)
         return sprintf("%4.2f GB", $size / 1073741824);
     else
         return sprintf("%4.2f TB", $size / 1073741824);
-}
-
-function post_author($author_id)
-{
-    // Use the existing $connect variable from the global scope
-    global $connect;
-    
-    $author = '-';
-    
-    // Use prepared statement
-    $stmt = mysqli_prepare($connect, "SELECT username FROM `users` WHERE id=? LIMIT 1");
-    mysqli_stmt_bind_param($stmt, "i", $author_id);
-    mysqli_stmt_execute($stmt);
-    $result = mysqli_stmt_get_result($stmt);
-    
-    if ($row = mysqli_fetch_assoc($result)) {
-        $author = $row['username'];
-    }
-    mysqli_stmt_close($stmt);
- 
-    return $author;
 }
 
 function generateSeoURL($string, $random_numbers = 1, $wordLimit = 8) { 
@@ -156,7 +138,10 @@ function generateSeoURL($string, $random_numbers = 1, $wordLimit = 8) {
 	<script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
 	<script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.polyfills.min.js"></script>
 	<link href="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.css" rel="stylesheet" type="text/css" />
-	<style>
+	
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
     a:link {
       text-decoration: none;
     }

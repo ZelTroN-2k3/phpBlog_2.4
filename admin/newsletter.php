@@ -20,6 +20,10 @@ if (isset($_GET['unsubscribe'])) {
 			<div class="card-body">
 <?php
 if (isset($_POST['send_mass_message'])) {
+    // --- NOUVEL AJOUT : Validation CSRF ---
+    validate_csrf_token();
+    // --- FIN AJOUT ---
+    
     $title    = addslashes($_POST['title']);
     $content  = htmlspecialchars($_POST['content']);
 
@@ -59,7 +63,8 @@ if (isset($_POST['send_mass_message'])) {
 }
 ?>
 				<form action="" method="post">
-					<p>
+                    <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                    <p>
 						<label>Title</label>
 						<input class="form-control" name="title" value="" type="text" required>
 					</p>
@@ -91,7 +96,7 @@ while ($row = mysqli_fetch_assoc($query)) {
                             <tr>
                                 <td>' . htmlspecialchars($row['email']) . '</td>
 								<td>
-									<a href="?unsubscribe=' . urlencode($row['email']) . '" class="btn btn-danger btn-sm"><i class="fas fa-bell-slash"></i> Unsubscribe</a>
+									<a href="?unsubscribe=' . urlencode($row['email']) . '&token=' . $csrf_token . '" class="btn btn-danger btn-sm"><i class="fas fa-bell-slash"></i> Unsubscribe</a>
 								</td>
                             </tr>
 ';

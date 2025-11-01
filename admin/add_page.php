@@ -2,6 +2,11 @@
 include "header.php";
 
 if (isset($_POST['add'])) {
+    
+    // --- NOUVEL AJOUT : Validation CSRF ---
+    validate_csrf_token();
+    // --- FIN AJOUT ---
+
     $title   = $_POST['title'];
     $slug    = generateSeoURL($title, 0);
     $content = htmlspecialchars($_POST['content']);
@@ -49,7 +54,8 @@ if (isset($_POST['add'])) {
               <h6 class="card-header">Add Page</h6>         
                   <div class="card-body">
                       <form action="" method="post">
-						<p>
+                        <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                        <p>
 							<label>Title</label>
 							<input class="form-control" name="title" value="" type="text" required>
 						</p>

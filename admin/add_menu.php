@@ -2,6 +2,11 @@
 include "header.php";
 
 if (isset($_POST['add'])) {
+    
+    // --- NOUVEL AJOUT : Validation CSRF ---
+    validate_csrf_token();
+    // --- FIN AJOUT ---
+
     $page    = $_POST['page'];
     $path    = $_POST['path'];
     $fa_icon = $_POST['fa_icon'];
@@ -23,7 +28,8 @@ if (isset($_POST['add'])) {
               <h6 class="card-header">Add Menu</h6>         
                   <div class="card-body">
                         <form action="" method="post">
-							<p>
+                            <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                            <p>
 								<label>Title</label>
 								<input class="form-control" name="page" value="" type="text" required>
 							</p>

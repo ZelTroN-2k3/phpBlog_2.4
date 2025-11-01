@@ -13,6 +13,10 @@ if (isset($_GET['delete_bgrimg'])) {
 
 if (isset($_POST['save'])) {
 
+    // --- NOUVEL AJOUT : Validation CSRF ---
+    validate_csrf_token();
+    // --- FIN AJOUT ---
+
 	if (@$_FILES['background_image']['name'] != '') {
         $target_dir    = "uploads/other/";
         $target_file   = $target_dir . basename($_FILES["background_image"]["name"]);
@@ -98,7 +102,8 @@ if (isset($_POST['save'])) {
 			<h6 class="card-header">Settings</h6>         
 			<div class="card-body">
 				<form action="" method="post" enctype="multipart/form-data">
-					<p>
+                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+                    <p>
 						<label>Site Name</label>
 						<input class="form-control" name="sitename" value="<?php
 echo htmlspecialchars($settings['sitename']);

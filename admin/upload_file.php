@@ -9,7 +9,8 @@ include "header.php";
               <h6 class="card-header">Upload File</h6>
                   <div class="card-body">
                     <form action="" method="post" enctype="multipart/form-data">
-						<p>
+                        <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                        <p>
 							<label><b>File</b></label>
 							<input type="file" name="file" class="form-control" required />
 						</p>
@@ -19,6 +20,11 @@ include "header.php";
                     </form>
 <?php
 if (isset($_POST['upload'])) {
+    
+    // --- NOUVEL AJOUT : Validation CSRF ---
+    validate_csrf_token();
+    // --- FIN AJOUT ---
+
     $file     = $_FILES['file'];
     $tmp_name = $_FILES['file']['tmp_name'];
     $name     = $_FILES['file']['name'];

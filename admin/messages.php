@@ -4,6 +4,10 @@ include "header.php";
 if (isset($_GET['id'])) {
     $id = (int)$_GET['id']; // Assurer que c'est un entier
     
+    // --- VALIDATION CSRF AJOUTÉE ---
+    validate_csrf_token_get(); 
+    // --- FIN AJOUT ---
+    
     // Utiliser une requête préparée pour la suppression
     $stmt = mysqli_prepare($connect, "DELETE FROM messages WHERE id = ?");
     mysqli_stmt_bind_param($stmt, "i", $id);
@@ -45,7 +49,7 @@ while ($row = mysqli_fetch_assoc($query)) {
                                     <a class="btn btn-success btn-sm" href="read_message.php?id=' . $row['id'] . '">
                                         <i class="fa fa-eye"></i> View
                                     </a>
-                                    <a class="btn btn-danger btn-sm" href="?id=' . $row['id'] . '">
+                                    <a class="btn btn-danger btn-sm" href="?id=' . $row['id'] . '&token=' . $csrf_token . '">
                                         <i class="fa fa-trash"></i> Delete
                                     </a>
                                 </td>
