@@ -12,6 +12,16 @@ if ($settings['sidebar_position'] == 'Left') {
 }
 
 $error = 0;
+
+// --- NOUVEL AJOUT : Initialisation du Rate Limiting ---
+if (!isset($_SESSION['login_attempts'])) {
+    $_SESSION['login_attempts'] = 0;
+}
+if (!isset($_SESSION['login_lockout_time'])) {
+    $_SESSION['login_lockout_time'] = 0;
+}
+// --- FIN AJOUT ---
+
 ?>
     <div class="col-md-8 mb-3">
         <div class="card">
@@ -22,7 +32,26 @@ $error = 0;
 						<div class="col-md-6 mb-4">
 							<h5><i class="fas fa-sign-in-alt"></i> Sign In</h5><hr />
 <?php
-if (isset($_POST['signin'])) {
+// --- NOUVEL AJOUT : Vérification du blocage ---
+$is_locked_out = false;
+if ($_SESSION['login_lockout_time'] > time()) {
+    $is_locked_out = true;
+    $time_remaining = ceil(($_SESSION['login_lockout_time'] - time()) / 60);
+    echo '
+    <div class="alert alert-danger">
+        <i class="fas fa-exclamation-triangle"></i> Vous avez échoué trop de fois. Veuillez réessayer dans ' . $time_remaining . ' minute(s).
+    </div>';
+    $error = 1; // Pour désactiver le formulaire
+}
+// --- FIN AJOUT ---
+
+
+if (isset($_POST['signin']) && !$is_locked_out) { // Ne traiter que si non bloqué
+    
+    // --- Validation CSRF ---
+    validate_csrf_token();
+    // --- FIN ---
+    
     $username = $_POST['username'];
     $password_plain = $_POST['password']; // Mot de passe en clair
     
@@ -40,27 +69,67 @@ if (isset($_POST['signin'])) {
         // 2. Vérifier le mot de passe en clair contre le hash
         if (password_verify($password_plain, $hashed_password)) {
             // Le mot de passe est correct !
+            
+            // --- NOUVEL AJOUT : Réinitialiser le compteur ---
+            $_SESSION['login_attempts'] = 0;
+            $_SESSION['login_lockout_time'] = 0;
+            // --- FIN AJOUT ---
+            
             $_SESSION['sec-username'] = $username;
             echo '<meta http-equiv="refresh" content="0; url=' . $settings['site_url'] . '">';
         } else {
             // Mot de passe incorrect
-            echo '
-            <div class="alert alert-danger">
-                <i class="fas fa-exclamation-circle"></i> The entered <strong>Username</strong> or <strong>Password</strong> is incorrect.
-            </div>';
+            
+            // --- NOUVEL AJOUT : Logique d'échec Rate Limiting ---
+            $_SESSION['login_attempts']++;
+            $attempts_remaining = 5 - $_SESSION['login_attempts'];
+            
+            if ($_SESSION['login_attempts'] >= 5) {
+                $_SESSION['login_lockout_time'] = time() + 300; // Bloquer pour 5 minutes (300 secondes)
+                echo '
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i> Vous avez échoué 5 fois. Veuillez réessayer dans 5 minutes.
+                </div>';
+            } else {
+                 echo '
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle"></i> Le <strong>nom d\'utilisateur</strong> ou <strong>mot de passe</strong> est incorrect.<br>
+                    Il vous reste ' . $attempts_remaining . ' tentative(s).
+                </div>';
+            }
+            // --- FIN AJOUT ---
+            
             $error = 1;
         }
     } else {
-        // Utilisateur non trouvé
-        echo '
-        <div class="alert alert-danger">
-            <i class="fas fa-exclamation-circle"></i> The entered <strong>Username</strong> or <strong>Password</strong> is incorrect.
-        </div>';
+        // Utilisateur non trouvé (on le compte aussi comme un échec)
+        
+        // --- NOUVEL AJOUT : Logique d'échec Rate Limiting ---
+        $_SESSION['login_attempts']++;
+        $attempts_remaining = 5 - $_SESSION['login_attempts'];
+
+        if ($_SESSION['login_attempts'] >= 5) {
+            $_SESSION['login_lockout_time'] = time() + 300; // Bloquer pour 5 minutes
+             echo '
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle"></i> Vous avez échoué 5 fois. Veuillez réessayer dans 5 minutes.
+            </div>';
+        } else {
+            echo '
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle"></i> Le <strong>nom d\'utilisateur</strong> ou <strong>mot de passe</strong> est incorrect.<br>
+                Il vous reste ' . $attempts_remaining . ' tentative(s).
+            </div>';
+        }
+        // --- FIN AJOUT ---
+        
         $error = 1;
     }
 }
 ?> 
 		<form action="" method="post">
+            <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+            
             <div class="input-group mb-3 needs-validation <?php
 if ($error == 1) {
     echo 'is-invalid';
@@ -71,14 +140,14 @@ if ($error == 1) {
 if ($error == 1) {
     echo 'autofocus';
 }
-?> required>
+?> required <?php if ($is_locked_out) echo 'disabled'; ?>>
             </div>
             <div class="input-group mb-3 needs-validation">
                 <span class="input-group-text"><i class="fas fa-key"></i></span>
-                <input type="password" name="password" class="form-control" placeholder="Password" required>
+                <input type="password" name="password" class="form-control" placeholder="Password" required <?php if ($is_locked_out) echo 'disabled'; ?>>
             </div>
 
-            <button type="submit" name="signin" class="btn btn-primary col-12"><i class="fas fa-sign-in-alt"></i>
+            <button type="submit" name="signin" class="btn btn-primary col-12" <?php if ($is_locked_out) echo 'disabled'; ?>><i class="fas fa-sign-in-alt"></i>
 &nbsp;Sign In</button>
 
         </form> 
@@ -88,6 +157,11 @@ if ($error == 1) {
 						<h5><i class="fas fa-user-plus"></i> Registration</h5><hr />
                 <?php
 if (isset($_POST['register'])) {
+    
+    // --- Validation CSRF ---
+    validate_csrf_token();
+    // --- FIN ---
+    
     $username = $_POST['username'];
     // MODIFICATION : Utiliser password_hash()
     $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
@@ -159,6 +233,8 @@ if (isset($_POST['register'])) {
 }
 ?>
         <form action="" method="post">
+            <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+            
             <div class="input-group mb-3 needs-validation">
                 <span class="input-group-text"><i class="fas fa-user"></i></span>
                 <input type="username" name="username" class="form-control" placeholder="Username" required>

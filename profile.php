@@ -20,6 +20,11 @@ $uname   = $_SESSION['sec-username'];
 $user_id = $rowu['id'];
 
 if (isset($_POST['save'])) {
+    
+    // --- NOUVEL AJOUT : Validation CSRF ---
+    validate_csrf_token();
+    // --- FIN AJOUT ---
+
     $email    = $_POST['email'];
     $username = $_POST['username'];
     $avatar   = $rowu['avatar'];
@@ -99,7 +104,8 @@ if (isset($_POST['save'])) {
 }
 ?>
 <form method="post" action="" enctype="multipart/form-data">
-						<label for="username"><i class="fa fa-user"></i> Username:</label>
+                        <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+                        <label for="username"><i class="fa fa-user"></i> Username:</label>
                         <input type="text" name="username" id="username" value="<?php
 echo htmlspecialchars($rowu['username']);
 ?>" class="form-control" required />

@@ -2,11 +2,14 @@
 // phpBlog version
 $phpblog_version = "2.4+";
 
-$configfile = 'config.php';
+// --- MODIFICATION : Correction du chemin ---
+$configfile = __DIR__ . '/config.php'; // Utilise le chemin absolu du dossier de core.php
 if (!file_exists($configfile)) {
-    echo '<meta http-equiv="refresh" content="0; url=install/index.php" />';
+    // MODIFICATION : Correction de l'URL de redirection (ajout de ../)
+    echo '<meta http-equiv="refresh" content="0; url=../install/index.php" />';
     exit();
 }
+// --- FIN MODIFICATION ---
 
 // Set longer maxlifetime of the session (7 days)
 @ini_set( "session.gc_maxlifetime", '604800');
@@ -15,12 +18,37 @@ if (!file_exists($configfile)) {
 @ini_set( "session.cookie_lifetime", '604800');
 
 session_start();
+
+// --- NOUVEL AJOUT : Protection CSRF ---
+// Générer un jeton CSRF unique s'il n'existe pas déjà dans la session
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+// --- FIN AJOUT ---
+
 include "config.php";
 
+// --- MODIFICATION MODE SOMBRE (DÉFINITION GLOBALE) ---
+// Définir les variables de thème ici pour les rendre globales
+$light_theme_name = $settings['theme'];
+$dark_theme_name = "Darkly"; // Vous pouvez changer ceci pour "Slate" ou "Superhero" si vous préférez
+
+// Chemin vers le CSS de Bootstrap 5 standard (si "Bootstrap 5" est sélectionné)
+$bootstrap_css = "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css";
+// Chemin vers le CSS de Bootswatch
+$bootswatch_base_url = "https://bootswatch.com/5/";
+
+// Déterminer l'URL du thème clair
+$light_theme_url = ($light_theme_name == "Bootstrap 5") 
+    ? $bootstrap_css 
+    : $bootswatch_base_url . strtolower($light_theme_name) . "/bootstrap.min.css";
+
+// Déterminer l'URL du thème sombre
+$dark_theme_url = $bootswatch_base_url . strtolower($dark_theme_name) . "/bootstrap.min.css";
+// --- FIN MODIFICATION MODE SOMBRE ---
+
+
 // Data Sanitization
-// Note : FILTER_SANITIZE_SPECIAL_CHARS n'est pas la meilleure protection universelle.
-// Il est préférable de valider/assainir les entrées spécifiques au moment de leur utilisation.
-// Mais nous le gardons pour la cohérence avec votre code existant.
 $_GET  = filter_input_array(INPUT_GET, FILTER_SANITIZE_SPECIAL_CHARS);
 //$_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_SPECIAL_CHARS);
 
@@ -580,10 +608,37 @@ function get_reading_time($content, $wpm = 200) {
     return '<i class="far fa-clock"></i> Read: ' . $minutes . ' min';
 }
 
+// --- NOUVELLE FONCTION : Validation CSRF ---
+/**
+ * Valide le jeton CSRF soumis via POST.
+ * Arrête l'exécution si le jeton est invalide ou manquant.
+ */
+function validate_csrf_token() {
+    if (!isset($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
+        // Le token est manquant ou invalide
+        die('Erreur de validation (CSRF token mismatch). La session a peut-être expiré. Veuillez recharger la page et réessayer.');
+    }
+}
+// --- FIN NOUVELLE FONCTION ---
+// --- NOUVELLE FONCTION : Validation CSRF pour GET ---
+/**
+ * Valide le jeton CSRF soumis via GET.
+ * Arrête l'exécution si le jeton est invalide ou manquant.
+ */
+function validate_csrf_token_get() {
+    if (!isset($_GET['token']) || !hash_equals($_SESSION['csrf_token'], $_GET['token'])) {
+        // Le token est manquant ou invalide
+        die('Erreur de validation (CSRF token mismatch). La session a peut-être expiré. Veuillez recharger la page et réessayer.');
+    }
+}
+// --- FIN NOUVELLE FONCTION ---
+
+
 function head()
 {
     // Rendre $connect, $logged, $rowu, $settings accessibles
-    global $connect, $logged, $rowu, $settings;
+    // AJOUT DES VARIABLES GLOBALES DE THÈME
+    global $connect, $logged, $rowu, $settings, $light_theme_url, $dark_theme_url;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -591,7 +646,32 @@ function head()
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-<?php
+    
+    <script>
+        (function() {
+            // Ces variables sont maintenant globales et seront correctement "echo"
+            const lightThemeUrl = '<?php echo $light_theme_url; ?>';
+            const darkThemeUrl = '<?php echo $dark_theme_url; ?>';
+            let currentTheme = localStorage.getItem('theme');
+
+            // Si aucune préférence n'est sauvegardée, vérifier la préférence du système
+            if (!currentTheme) {
+                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    currentTheme = 'dark';
+                } else {
+                    currentTheme = 'light';
+                }
+            }
+
+            // Appliquer le thème en écrivant la balise <link> appropriée
+            const themeUrl = (currentTheme === 'dark') ? darkThemeUrl : lightThemeUrl;
+            document.write('<link id="theme-link" rel="stylesheet" href="' + themeUrl + '">');
+            
+            // Sauvegarder le choix (surtout si c'était la détection auto)
+            localStorage.setItem('theme', currentTheme);
+        })();
+    </script>
+    <?php
 	$current_page = basename($_SERVER['SCRIPT_NAME']);
     $pagetitle   = '';
     $description = '';
@@ -616,6 +696,18 @@ function head()
     } else if ($current_page == 'my-comments.php') {
         $pagetitle   = 'My Comments';
 		$description = 'Manage your comments.';
+		
+    } else if ($current_page == 'my-favorites.php') {
+        $pagetitle   = 'My Favorites';
+		$description = 'Manage your favorite posts.';
+		
+    } else if ($current_page == 'author.php') {
+        $pagetitle   = 'Author Profile';
+		$description = 'View author profile.';
+		
+    } else if ($current_page == 'edit-comment.php') {
+        $pagetitle   = 'Edit Comment';
+		$description = 'Edit your comment.';
 		
     } else if ($current_page == 'login.php') {
         $pagetitle   = 'Sign In';
@@ -772,18 +864,10 @@ function head()
         <meta name="robots" content="index, follow, all" />
         <link rel="shortcut icon" href="assets/img/favicon.png" type="image/png" />
 
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 
-		<link href="https://use.fontawesome.com/releases/v5.15.4/css/all.css" type="text/css" rel="stylesheet"/>
-<?php
-if($settings['theme'] != "Bootstrap 5") {
-    // Utiliser htmlspecialchars pour sécuriser la variable au cas où
-    echo '
-        <link href="https://bootswatch.com/5/'. htmlspecialchars(strtolower($settings['theme'])) .'/bootstrap.min.css" type="text/css" rel="stylesheet"/>
-	';
-}
-?>
+        <link href="https://use.fontawesome.com/releases/v5.15.4/css/all.css" type="text/css" rel="stylesheet"/>
+        
 		<script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
 		
 		<link href="assets/css/phpblog.css" rel="stylesheet">
@@ -1075,9 +1159,15 @@ if ($settings['layout'] == 'Wide') {
     }
 ?>
 				</ul>
-				<ul class="navbar-nav d-flex">
-      
-<?php
+                
+                <ul class="navbar-nav ms-auto d-flex flex-row align-items-center">
+                    <li class="nav-item me-2">
+                        <button class="btn btn-link nav-link theme-switcher" id="theme-switcher-btn" type="button" aria-label="Toggle theme">
+                            <i class="fas fa-moon" id="theme-icon-moon"></i>
+                            <i class="fas fa-sun" id="theme-icon-sun" style="display: none;"></i>
+                        </button>
+                    </li>
+                <?php
     if ($logged == 'No') {
 ?>
 					<li class="nav-item">
@@ -1168,7 +1258,7 @@ if ($count <= 0) {
     while ($row = mysqli_fetch_assoc($run)) {
         // Utiliser htmlspecialchars
         echo '<a href="post?name=' . htmlspecialchars($row['slug']) . '">' . htmlspecialchars($row['title']) . '</a>
-        &nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;';
+        &nbsp;&nbsp;|&nbsp;&nbsp;'; // <-- CORRECTION DU BUG ICI
     }
 }
 ?>
@@ -1470,7 +1560,8 @@ function sidebar() {
 
 function footer()
 {
-    global $phpblog_version, $connect, $settings;
+    // AJOUT DES VARIABLES GLOBALES DE THÈME
+    global $phpblog_version, $connect, $settings, $light_theme_url, $dark_theme_url;
 ?>
 		</div>
 <?php
@@ -1563,8 +1654,50 @@ while ($row = mysqli_fetch_assoc($run)) {
 			</div>
 		</div>
 	</footer>
-</body>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const themeSwitcherBtn = document.getElementById('theme-switcher-btn');
+        const themeLink = document.getElementById('theme-link');
+        const iconMoon = document.getElementById('theme-icon-moon');
+        const iconSun = document.getElementById('theme-icon-sun');
 
+        // URLs des thèmes (doivent correspondre à celles du <head>)
+        // Ces variables sont maintenant globales et seront correctement "echo"
+        const lightThemeUrl = '<?php echo $light_theme_url; ?>';
+        const darkThemeUrl = '<?php echo $dark_theme_url; ?>';
+
+        // Fonction pour mettre à jour les icônes
+        function updateIcons(theme) {
+            if (theme === 'dark') {
+                iconMoon.style.display = 'none';
+                iconSun.style.display = 'inline-block';
+            } else {
+                iconMoon.style.display = 'inline-block';
+                iconSun.style.display = 'none';
+            }
+        }
+
+        // Mettre à jour les icônes au chargement de la page
+        updateIcons(localStorage.getItem('theme'));
+
+        // Gérer le clic sur le bouton
+        themeSwitcherBtn.addEventListener('click', function () {
+            let currentTheme = localStorage.getItem('theme');
+            let newTheme = (currentTheme === 'dark') ? 'light' : 'dark';
+
+            // Changer le thème
+            themeLink.href = (newTheme === 'dark') ? darkThemeUrl : lightThemeUrl;
+            
+            // Sauvegarder le choix
+            localStorage.setItem('theme', newTheme);
+            
+            // Mettre à jour les icônes
+            updateIcons(newTheme);
+        });
+    });
+    </script>
+    </body>
 </html>
 <?php
 }

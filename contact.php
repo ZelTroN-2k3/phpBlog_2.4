@@ -60,6 +60,11 @@ echo $settings['linkedin'];
                         <h5 class="mt-4 mb-2">Leave Your Message</h5>
 <?php
 if (isset($_POST['send'])) {
+    
+    // --- NOUVEL AJOUT : Validation CSRF ---
+    validate_csrf_token();
+    // --- FIN AJOUT ---
+    
     if ($logged == 'No') {
         $name    = $_POST['name'];
         $email   = $_POST['email'];
@@ -105,7 +110,8 @@ if (isset($_POST['send'])) {
 }
 ?>
                         <form method="post" action="">
-<?php
+                            <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+                            <?php
 if ($logged == 'No') {
 ?>
                             <label for="name"><i class="fa fa-user"></i> Name:</label>

@@ -69,7 +69,7 @@ echo '
 				
 				<h5 class="card-title fw-bold">' . htmlspecialchars($row['title']) . '</h5>
 				
-                <div class="d-flex justify-content-between align-items-center">
+				<div class="d-flex justify-content-between align-items-center">
 					<small>
 						Posted by <b><i><i class="fas fa-user"></i> ' . post_author($row['author_id']) . '</i></b> 
 						on <b><i><i class="far fa-calendar-alt"></i> ' . date($settings['date_format'] . ' H:i', strtotime($row['created_at'])) . '</i></b>
@@ -92,12 +92,12 @@ echo '
 				
 				';
                 if (!empty($row['download_link']) || !empty($row['github_link'])) {
-                    echo '<h5><i class="fas fa-download"></i> Downloads</h5>';
+                    echo '<h5><i class="fas fa-download"></i> Téléchargements</h5>';
                     
                     if (!empty($row['download_link'])) {
                         echo '
                         <a href="' . htmlspecialchars($row['download_link']) . '" class="btn btn-primary me-2 mb-2" target="_blank" rel="noopener noreferrer">
-                            <i class="fas fa-file-archive"></i> Download (.zip/.rar)
+                            <i class="fas fa-file-archive"></i> Télécharger (.zip/.rar)
                         </a>';
                     }
                     
@@ -145,7 +145,7 @@ echo '
 				$user_has_liked = check_user_has_liked($post_id);
 				
 				$like_class = $user_has_liked ? 'btn-primary' : 'btn-outline-primary';
-				$like_text = $user_has_liked ? 'Love' : 'I like';
+				$like_text = $user_has_liked ? 'Aimé' : 'J\'aime';
 				?>
 				
 				<button class="btn <?php echo $like_class; ?> mt-2" id="like-button" data-post-id="<?php echo $post_id; ?>">
@@ -159,7 +159,7 @@ echo '
                     // Déterminer l'apparence initiale du bouton
                     $fav_class = $user_has_favorited ? 'btn-warning' : 'btn-outline-warning';
                     $fav_icon = $user_has_favorited ? 'fas fa-bookmark' : 'far fa-bookmark'; // fas = plein, far = vide
-                    $fav_text = $user_has_favorited ? 'Enregistré' : 'Save Favorite';
+                    $fav_text = $user_has_favorited ? 'Enregistré' : 'Enregistrer';
                 ?>
                     
                     <button class="btn <?php echo $fav_class; ?> mt-2 ms-2" id="favorite-button" data-post-id="<?php echo $post_id; ?>">
@@ -309,6 +309,7 @@ if ($cancomment == 'Yes') {
 ?>
                         <form name="comment_form" id="main-comment-form" method="post" action="ajax_submit_comment.php">
                             
+                            <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                             <input type="hidden" name="parent_id" id="parent_id" value="0">
                             <input type="hidden" name="post_id" id="post_id" value="<?php echo $post_id; ?>">
                             
@@ -539,11 +540,11 @@ document.getElementById('like-button').addEventListener('click', function() {
             if (data.liked) {
                 likeButton.classList.remove('btn-outline-primary');
                 likeButton.classList.add('btn-primary');
-                likeText.innerText = 'Love';
+                likeText.innerText = 'Aimé';
             } else {
                 likeButton.classList.remove('btn-primary');
                 likeButton.classList.add('btn-outline-primary');
-                likeText.innerText = 'I like';
+                likeText.innerText = 'J\'aime';
             }
         } else {
             console.error(data.message);
