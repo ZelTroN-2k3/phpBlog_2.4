@@ -9,11 +9,30 @@ if (isset($_GET['delete-id'])) {
     mysqli_stmt_bind_param($stmt, "i", $id);
     mysqli_stmt_execute($stmt);
     mysqli_stmt_close($stmt);
+    
+    // Rediriger pour nettoyer l'URL
+    echo '<meta http-equiv="refresh" content="0; url=gallery.php">';
+    exit;
 }
 ?>
-	<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-		<h3 class="h3"><i class="fas fa-images"></i> Gallery</h3>
-	</div>
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0"><i class="fas fa-images"></i> Gallery</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="dashboard.php">Home</a></li>
+                    <li class="breadcrumb-item active">Gallery</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+<section class="content">
+    <div class="container-fluid">
 	  
 <?php
 if (isset($_GET['edit-id'])) {
@@ -55,13 +74,21 @@ if (isset($_GET['edit-id'])) {
             if ($check !== false) {
                 $uploadOk = 1;
             } else {
-                echo '<div class="alert alert-danger">The file is not an image.</div>';
+                // Remplacement par alerte AdminLTE
+                echo '<div class="alert alert-danger alert-dismissible">
+                        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                        The file is not an image.
+                      </div>';
                 $uploadOk = 0;
             }
             
             // Check file size
             if ($_FILES["avafile"]["size"] > 10000000) {
-                echo '<div class="alert alert-warning">Sorry, your file is too large.</div>';
+                // Remplacement par alerte AdminLTE
+                echo '<div class="alert alert-warning alert-dismissible">
+                        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                        Sorry, your file is too large.
+                      </div>';
                 $uploadOk = 0;
             }
             
@@ -80,89 +107,99 @@ if (isset($_GET['edit-id'])) {
         mysqli_stmt_execute($stmt);
         mysqli_stmt_close($stmt);
 
-        echo '<meta http-equiv="refresh" content="0; url=gallery.php">';
+        // Redirection uniquement si l'upload n'a pas échoué, ou si aucune nouvelle image n'était présente
+        if (!isset($uploadOk) || $uploadOk == 1) {
+             echo '<meta http-equiv="refresh" content="0; url=gallery.php">';
+             exit;
+        }
     }
 ?>
-
-	  <div class="card mb-3">
-		  <h6 class="card-header">Edit Image</h6>         
-              <div class="card-body">
-				  <form action="" method="post" enctype="multipart/form-data">
-                    <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
-                    <p>
-						  <label>Title</label>
-						  <input class="form-control" name="title" type="text" value="<?php
-    echo htmlspecialchars($row['title']);
+    <div class="card card-primary card-outline mb-3">
+		<div class="card-header">
+            <h3 class="card-title">Edit Image</h3>
+        </div>         
+        <form action="" method="post" enctype="multipart/form-data">
+            <div class="card-body">
+                <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                
+                <div class="form-group">
+					<label>Title</label>
+					<input class="form-control" name="title" type="text" value="<?php
+echo htmlspecialchars($row['title']);
 ?>" required>
-					  </p>
-					  <p>
-						  <label>Image</label><br />
-						  <img src="../<?php
-    echo htmlspecialchars($row['image']);
-?>" width="50px" height="50px" /><br />
-						  <input type="file" name="avafile" class="form-control" />
-					  </p>
-					  <p>
-						  <label>Active</label><br />
-						  <select name="active" class="form-select">
-							  <option value="Yes" <?php
-    if ($row['active'] == "Yes") {
-        echo 'selected';
-    }
+				</div>
+				<div class="form-group">
+					<label>Image</label><br />
+					<img src="../<?php
+echo htmlspecialchars($row['image']);
+?>" width="50px" height="50px" class="img-circle elevation-2 mb-2" /><br />
+					<input type="file" name="avafile" class="form-control" />
+				</div>
+				<div class="form-group">
+					<label>Active</label>
+					<select name="active" class="form-control">
+						<option value="Yes" <?php
+if ($row['active'] == "Yes") {
+    echo 'selected';
+}
 ?>>Yes</option>
-							  <option value="No" <?php
-    if ($row['active'] == "No") {
-        echo 'selected';
-    }
+						<option value="No" <?php
+if ($row['active'] == "No") {
+    echo 'selected';
+}
 ?>>No</option>
-                          </select>
-					  </p>
-					  <p>
-						  <label>Album</label><br />
-						  <select name="album_id" class="form-select" required>
+                    </select>
+				</div>
+				<div class="form-group">
+					<label>Album</label>
+					<select name="album_id" class="form-control" required>
 <?php
-    $crun = mysqli_query($connect, "SELECT * FROM `albums`");
-    while ($rw = mysqli_fetch_assoc($crun)) {
-		$selected = "";
-		if ($row['album_id'] == $rw['id']) {
-			$selected = "selected";
-		}
-        echo '<option value="' . $rw['id'] . '" ' . $selected . '>' . htmlspecialchars($rw['title']) . '</option>';
-    }
+$crun = mysqli_query($connect, "SELECT * FROM `albums`");
+while ($rw = mysqli_fetch_assoc($crun)) {
+	$selected = "";
+	if ($row['album_id'] == $rw['id']) {
+		$selected = "selected";
+	}
+    echo '<option value="' . $rw['id'] . '" ' . $selected . '>' . htmlspecialchars($rw['title']) . '</option>';
+}
 ?>
-						  </select>
-						</p>
-					  <p>
-						  <label>Description</label>
-						  <textarea class="form-control" id="summernote" name="description"><?php
-    echo htmlspecialchars($row['description']);
+					</select>
+				</div>
+				<div class="form-group">
+					<label>Description</label>
+					<textarea class="form-control" id="summernote" name="description"><?php
+echo html_entity_decode($row['description']);
 ?></textarea>
-					  </p>
-
-					  <input type="submit" class="btn btn-primary col-12" name="edit" value="Save" /><br />
-
-				  </form>
-			  </div>
-	  </div>
+				</div>
+            </div>
+            <div class="card-footer">
+			    <input type="submit" class="btn btn-primary" name="edit" value="Save" />
+                <a href="gallery.php" class="btn btn-secondary">Annuler</a>
+            </div>
+		</form>
+	</div>
 <?php
 }
 ?>
 
-            <div class="card">
-              <h6 class="card-header">Gallery</h6>         
-                  <div class="card-body">
-				  <a href="add_image.php" class="btn btn-primary col-12"><i class="fa fa-edit"></i> Add Image</a><br /><br />
-
-            <table class="table table-border table-hover" id="dt-basic" width="100%">
-                <thead>
-				<tr>
-                    <th>Image</th>
-                    <th>Title</th>
-					<th>Active</th>
-					<th>Album</th>
-					<th>Actions</th>
-                </tr>
-				</thead>
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <a href="add_image.php" class="btn btn-primary"><i class="fa fa-plus"></i> Add Image</a>
+                </h3>
+            </div>         
+            <div class="card-body">
+                <table class="table table-bordered table-hover" id="dt-basic" style="width:100%">
+                    <thead>
+                    <tr>
+                        <th>Image</th>
+                        <th>Title</th>
+                        <th>Active</th>
+                        <th>Album</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
 <?php
 $sql = mysqli_query($connect, "SELECT * FROM gallery ORDER BY id DESC");
 while ($row = mysqli_fetch_assoc($sql)) {
@@ -179,45 +216,35 @@ while ($row = mysqli_fetch_assoc($sql)) {
     $album_title = $cat ? $cat['title'] : 'N/A';
 
     echo '
-                <tr>
-	                <td><center><img src="../' . htmlspecialchars($row['image']) . '" width="100px" height="75px" /></center></td>
-	                <td>' . htmlspecialchars($row['title']) . '</td>
-					<td>' . htmlspecialchars($row['active']) . '</td>
-					<td>' . htmlspecialchars($album_title) . '</td>
-					<td>
-					    <a href="?edit-id=' . $row['id'] . '" class="btn btn-primary btn-sm"><i class="fa fa-edit"></i> Edit</a>
-						<a href="?delete-id=' . $row['id'] . '&token=' . $csrf_token . '" class="btn btn-danger btn-sm"><i class="fa fa-trash"></i> Delete</a>
-					</td>
-                </tr>
+            <tr>
+                <td><center><img src="../' . htmlspecialchars($row['image']) . '" width="100px" height="75px" class="img-thumbnail elevation-1" /></center></td>
+                <td>' . htmlspecialchars($row['title']) . '</td>
+                <td><span class="badge bg-' . ($row['active'] == "Yes" ? 'success' : 'danger') . '">' . htmlspecialchars($row['active']) . '</span></td>
+                <td>' . htmlspecialchars($album_title) . '</td>
+                <td>
+                    <a href="?edit-id=' . $row['id'] . '" class="btn btn-primary btn-sm"><i class="fa fa-edit"></i> Edit</a>
+                    <a href="?delete-id=' . $row['id'] . '&token=' . $csrf_token . '" class="btn btn-danger btn-sm" onclick="return confirm(\'Êtes-vous sûr de vouloir supprimer cette image ?\');"><i class="fa fa-trash"></i> Delete</a>
+                </td>
+            </tr>
 ';
 }
-echo '</table>';
-
 ?>
-                  </div>
+                    </tbody>
+                </table>
             </div>
+        </div>
 
+    </div></section>
 <script>
 $(document).ready(function() {
-	
-	$('#dt-basic').dataTable( {
-		"responsive": true,
-		"order": [[ 1, "asc" ]],
-		"language": {
-			"paginate": {
-			  "previous": '<i class="fa fa-angle-left"></i>',
-			  "next": '<i class="fa fa-angle-right"></i>'
-			}
-		}
-	} );
-	
-	$('#summernote').summernote({height: 350});
-	
-	var noteBar = $('.note-toolbar');
-		noteBar.find('[data-toggle]').each(function() {
-		$(this).attr('data-bs-toggle', $(this).attr('data-toggle')).removeAttr('data-toggle');
+    // Le script de datatables est dans footer.php, nous surchargeons ici l'ordre
+	$('#dt-basic').DataTable({
+        "responsive": true,
+        "lengthChange": false, 
+        "autoWidth": false,
+		"order": [[ 1, "asc" ]] // Ordonner par titre d'image (colonne 1)
 	});
-} );
+});
 </script>
 <?php
 include "footer.php";

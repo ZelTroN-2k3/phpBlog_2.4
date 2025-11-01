@@ -52,63 +52,84 @@ if (isset($_POST['add'])) {
     mysqli_stmt_close($stmt);
 
     echo '<meta http-equiv="refresh" content="0; url=gallery.php">';
+    exit;
 }
 ?>
-	<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-		<h3 class="h3"><i class="fas fa-images"></i> Gallery</h3>
-	</div>
 
-	<div class="card">
-        <h6 class="card-header">Add Image</h6>         
-            <div class="card-body">
-                <form action="" method="post" enctype="multipart/form-data">
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0"><i class="fas fa-camera-retro"></i> Add Image</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="dashboard.php">Home</a></li>
+                    <li class="breadcrumb-item"><a href="gallery.php">Gallery</a></li>
+                    <li class="breadcrumb-item active">Add Image</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+<section class="content">
+    <div class="container-fluid">
+
+        <div class="card card-primary card-outline">
+            <div class="card-header">
+                <h3 class="card-title">Add New Image to Gallery</h3>
+            </div>         
+            <form action="" method="post" enctype="multipart/form-data">
+                <div class="card-body">
                     <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
-                    <p>
+                    
+                    <div class="form-group">
 						<label>Title</label>
 						<input class="form-control" name="title" value="" type="text" required>
-					</p>
-					<p>
+					</div>
+					<div class="form-group">
 						<label>Image</label>
 						<input type="file" name="avafile" class="form-control" required />
-					</p>
-					<p>
-						<label>Active</label><br />
-						<select name="active" class="form-select" required>
+					</div>
+					
+					<div class="form-group">
+						<label>Active</label>
+						<select name="active" class="form-control" required>
 							<option value="Yes" selected>Yes</option>
 							<option value="No">No</option>
                         </select>
-					</p>
-					<p>
-						<label>Album</label><br />
-						<select name="album_id" class="form-select" required>
-<?php
-$crun = mysqli_query($connect, "SELECT * FROM `albums`");
-while ($rw = mysqli_fetch_assoc($crun)) {
-    echo '
-                            <option value="' . $rw['id'] . '">' . htmlspecialchars($rw['title']) . '</option>
-									';
-}
-?>
+					</div>
+					
+					<div class="form-group">
+						<label>Album</label>
+						<select name="album_id" class="form-control" required>
+                            <?php
+                            $crun = mysqli_query($connect, "SELECT * FROM `albums`");
+                            while ($rw = mysqli_fetch_assoc($crun)) {
+                                echo '
+                                            <option value="' . $rw['id'] . '">' . htmlspecialchars($rw['title']) . '</option>
+                                    ';
+                            }
+                            ?>
 						</select>
-					</p>
-					<p>
+					</div>
+					
+					<div class="form-group">
 						<label>Description</label>
 						<textarea class="form-control" id="summernote" name="description"></textarea>
-					</p>
-                                
-					<input type="submit" name="add" class="btn btn-primary col-12" value="Add" />
-				</form>                            
-            </div>
+					</div>
+                </div>
+                <div class="card-footer">
+					<input type="submit" name="add" class="btn btn-primary" value="Add" />
+                </div>
+			</form>
         </div>
 
+    </div></section>
 <script>
 $(document).ready(function() {
-	$('#summernote').summernote({height: 350});
-	
-	var noteBar = $('.note-toolbar');
-		noteBar.find('[data-toggle]').each(function() {
-		$(this).attr('data-bs-toggle', $(this).attr('data-toggle')).removeAttr('data-toggle');
-	});
+    // Note: Summernote est initialisé dans footer.php via une vérification
+    // $(function () { if ($('#summernote').length) { ... } });
 });
 </script>
 <?php

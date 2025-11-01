@@ -27,11 +27,30 @@ if (isset($_GET['delete-id'])) {
         mysqli_stmt_close($stmt_page);
     }
     mysqli_stmt_close($stmt);
+    
+    // Rediriger pour nettoyer l'URL
+    echo '<meta http-equiv="refresh" content="0; url=pages.php">';
+    exit;
 }
 ?>
-	<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-		<h3 class="h3"><i class="fas fa-file-alt"></i> Pages</h3>
-	</div>
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0"><i class="fas fa-file-alt"></i> Pages</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="dashboard.php">Home</a></li>
+                    <li class="breadcrumb-item active">Pages</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+<section class="content">
+    <div class="container-fluid">
 	  
 <?php
 if (isset($_GET['edit-id'])) {
@@ -69,8 +88,10 @@ if (isset($_GET['edit-id'])) {
 
         if (mysqli_num_rows($queryvalid) > 0) {
             echo '
-                <div class="alert alert-warning">
-                    <i class="fas fa-info-circle"></i> Page with this name has already been added.
+                <div class="alert alert-warning alert-dismissible">
+                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                    <h5><i class="icon fas fa-exclamation-triangle"></i> Erreur !</h5>
+                    Une page avec ce nom existe déjà.
                 </div>';
         } else {
             // Use prepared statement for UPDATE pages
@@ -88,85 +109,80 @@ if (isset($_GET['edit-id'])) {
             mysqli_stmt_close($stmt);
             
             echo '<meta http-equiv="refresh" content="0; url=pages.php">';
+            exit;
         }
     }
 ?>
-            <div class="card mb-3">
-              <h6 class="card-header">Edit Page</h6>         
-                  <div class="card-body">
-					  <form action="" method="post">
+            <div class="card card-primary card-outline mb-3">
+              <div class="card-header">
+                  <h3 class="card-title">Edit Page</h3>
+              </div>         
+                  <form action="" method="post">
+                    <div class="card-body">
                         <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
-                        <p>
-						  	<label>Title</label>
-						  	<input name="title" type="text" class="form-control" value="<?php
-						      echo htmlspecialchars($row['title']); // Prevent XSS
+                        <div class="form-group">
+                            <label>Title</label>
+                            <input name="title" type="text" class="form-control" value="<?php
+                                  echo htmlspecialchars($row['title']); // Prevent XSS
 ?>" required>
-						  </p>
-						  <p>
-						  	<label>Content</label>
-						  	<textarea name="content" id="summernote" required><?php
-						      echo html_entity_decode($row['content']);
+                        </div>
+                        <div class="form-group">
+                            <label>Content</label>
+                            <textarea name="content" id="summernote" required><?php
+                                  echo html_entity_decode($row['content']);
 ?></textarea>
-						  </p>
-						  <input type="submit" class="btn btn-primary col-12" name="submit" value="Save" /><br />
-					  </form>
-                  </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <input type="submit" class="btn btn-primary" name="submit" value="Save" />
+                        <a href="pages.php" class="btn btn-secondary">Annuler</a>
+                    </div>
+                  </form>
             </div>
 <?php
 }
 ?>
 
             <div class="card">
-              <h6 class="card-header">Pages</h6>
-                  <div class="card-body">
-				  <a href="add_page.php" class="btn btn-primary col-12"><i class="fa fa-edit"></i> Add Page</a><br /><br />
-
-            <table id="dt-basic" class="table table-border table-hover">
-                <thead>
-				<tr>
-                    <th>Title</th>
-					<th>Actions</th>
-                </tr>
-				</thead>
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <a href="add_page.php" class="btn btn-primary"><i class="fa fa-plus"></i> Add Page</a>
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <table id="dt-basic" class="table table-bordered table-hover" style="width:100%">
+                        <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
 <?php
 $sql = mysqli_query($connect, "SELECT * FROM pages ORDER BY id DESC");
 while ($row = mysqli_fetch_assoc($sql)) {
   echo '
                 <tr>
-	                <td>' . $row['title'] . '</td>
+	                <td>' . htmlspecialchars($row['title']) . '</td>
 					<td>
 					    <a href="?edit-id=' . $row['id'] . '" class="btn btn-primary btn-sm"><i class="fa fa-edit"></i> Edit</a>
-						<a href="?delete-id=' . $row['id'] . '&token=' . $csrf_token . '" class="btn btn-danger btn-sm"><i class="fa fa-trash"></i> Delete</a>
+						<a href="?delete-id=' . $row['id'] . '&token=' . $csrf_token . '" class="btn btn-danger btn-sm" onclick="return confirm(\'Êtes-vous sûr de vouloir supprimer cette page ? L\'élément de menu sera également supprimé.\');"><i class="fa fa-trash"></i> Delete</a>
 					</td>
                 </tr>
 ';
 }
 ?>
-			</table>
-                  </div>
-              
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
+    </div></section>
 <script>
 $(document).ready(function() {
-
-	$('#dt-basic').dataTable( {
-		"responsive": true,
-		"language": {
-			"paginate": {
-			  "previous": '<i class="fa fa-angle-left"></i>',
-			  "next": '<i class="fa fa-angle-right"></i>'
-			}
-		}
-	} );
-	
-	$('#summernote').summernote({height: 350});
-	
-	var noteBar = $('.note-toolbar');
-		noteBar.find('[data-toggle]').each(function() {
-		$(this).attr('data-bs-toggle', $(this).attr('data-toggle')).removeAttr('data-toggle');
-	});
-} );
+    // Note: DataTables est initialisé dans footer.php. On le surcharge ici pour l'ordre si nécessaire.
+    // L'ordre par défaut (colonne 0 descendante) convient ici.
+});
 </script>
 <?php
 include "footer.php";

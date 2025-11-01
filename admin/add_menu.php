@@ -18,35 +18,58 @@ if (isset($_POST['add'])) {
     mysqli_stmt_close($stmt);
 
     echo '<meta http-equiv="refresh" content="0;url=menu_editor.php">';
+    exit;
 }
 ?>
-		<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-			<h3 class="h3"><i class="fas fa-bars"></i> Menu Editor</h3>
-		</div>
 
-            <div class="card">
-              <h6 class="card-header">Add Menu</h6>         
-                  <div class="card-body">
-                        <form action="" method="post">
-                            <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
-                            <p>
-								<label>Title</label>
-								<input class="form-control" name="page" value="" type="text" required>
-							</p>
-							<p>
-								<label>Path (Link)</label>
-								<input class="form-control" name="path" value="" type="text" required>
-							</p>
-                            <p>
-								<label>Font Awesome 5 Icon</label>
-								<input class="form-control" name="fa_icon" value="" type="text">
-							</p>
-							<div class="form-actions">
-                                <input type="submit" name="add" class="btn btn-primary col-12" value="Add" />
-                            </div>
-						</form>                       
-                  </div>
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0"><i class="fas fa-bars"></i> Add Menu Item</h1>
             </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="dashboard.php">Home</a></li>
+                    <li class="breadcrumb-item"><a href="menu_editor.php">Menu Editor</a></li>
+                    <li class="breadcrumb-item active">Add Menu Item</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+<section class="content">
+    <div class="container-fluid">
+
+        <div class="card card-primary card-outline">
+            <div class="card-header">
+                <h3 class="card-title">New Menu Item Details</h3>
+            </div>         
+            <form action="" method="post">
+                <div class="card-body">
+                    <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                    <div class="form-group">
+                        <label>Title</label>
+                        <input class="form-control" name="page" value="" type="text" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Path (Link)</label>
+                        <input class="form-control" name="path" value="" type="text" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Font Awesome 5 Icon</label>
+                        <input class="form-control" name="fa_icon" value="" type="text">
+                        <small class="form-text text-muted">Ex: fa-home, fa-images, fa-envelope. La classe "fa" ou "fas" est ajoutée automatiquement.</small>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <input type="submit" name="add" class="btn btn-primary" value="Add" />
+                </div>
+            </form>                       
+        </div>
+
+    </div>
+</section>
 <?php
 include "footer.php";
 ?>

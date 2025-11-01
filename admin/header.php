@@ -25,11 +25,8 @@ if (isset($_SESSION['sec-username'])) {
 }
 
 // --- NOUVEL AJOUT : Validation CSRF pour les actions GET ---
-// Définir une variable simple pour le jeton
 $csrf_token = $_SESSION['csrf_token'];
-
-// Si une action GET dangereuse est détectée, valider le jeton
-if (isset($_GET['delete-id']) || isset($_GET['up-id']) || isset($_GET['down-id']) || isset($_GET['delete_bgrimg']) || isset($_GET['unsubscribe'])) {
+if (isset($_GET['delete-id']) || isset($_GET['up-id']) || isset($_GET['down-id']) || isset($_GET['delete_bgrimg']) || isset($_GET['unsubscribe']) || isset($_GET['approve-comment']) || isset($_GET['delete-comment'])) {
     validate_csrf_token_get();
 }
 // --- FIN AJOUT ---
@@ -45,9 +42,6 @@ if (basename($_SERVER['SCRIPT_NAME']) != 'add_post.php'
  && basename($_SERVER['SCRIPT_NAME']) != 'gallery.php'
  && basename($_SERVER['SCRIPT_NAME']) != 'settings.php'
  && basename($_SERVER['SCRIPT_NAME']) != 'newsletter.php') {
-    // Ne pas filtrer $_GET ici pour permettre la validation du token
-    // $_GET  = filter_input_array(INPUT_GET, FILTER_SANITIZE_SPECIAL_CHARS); 
-    //$_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_SPECIAL_CHARS);
 }
 
 if ($user['role'] == "Editor" && 
@@ -64,9 +58,6 @@ if ($user['role'] == "Editor" &&
     echo '<meta http-equiv="refresh" content="0; url=dashboard.php" />';
     exit;
 }
-
-// --- MODIFICATION : short_text() et post_author() ont été SUPPRIMÉES ---
-// Elles sont maintenant chargées depuis core.php
 
 function byte_convert($size)
 {
@@ -111,453 +102,291 @@ function generateSeoURL($string, $random_numbers = 1, $wordLimit = 8) {
  
     return trim(trim($string, $separator)); 
 }
+
+// Variable pour la page active (utilisée dans la sidebar)
+$current_page = basename($_SERVER['SCRIPT_NAME']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>phpBlog - Admin Panel</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <META NAME="ROBOTS" CONTENT="NOINDEX, NOFOLLOW">
     <meta name="author" content="Antonov_WEB" />
-
     <link rel="shortcut icon" href="../assets/img/favicon.png" />
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-
-	<link href="https://use.fontawesome.com/releases/v5.15.4/css/all.css" rel="stylesheet"/>
-
-	<link href="https://cdn.datatables.net/v/bs5/dt-2.1.8/r-3.0.3/datatables.min.css" rel="stylesheet">
- 
-	<script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
-	
-	<link href="https://cdn.jsdelivr.net/npm/summernote@0.9.1/dist/summernote-bs5.min.css" rel="stylesheet">
-	<script src="https://cdn.jsdelivr.net/npm/summernote@0.9.1/dist/summernote-bs5.min.js"></script>
-	
-	<script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
-	<script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.polyfills.min.js"></script>
-	<link href="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.css" rel="stylesheet" type="text/css" />
-	
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+    <link rel="stylesheet" href="assets/adminlte/plugins/fontawesome-free/css/all.min.css">
+    <link rel="stylesheet" href="assets/adminlte/dist/css/adminlte.min.css">
     
+    <link rel="stylesheet" href="assets/adminlte/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" href="assets/adminlte/plugins/datatables-responsive/css/responsive.bootstrap4.min.css">
+    
+    <link rel="stylesheet" href="assets/adminlte/plugins/summernote/summernote-bs4.min.css">
+    
+    <link href="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.css" rel="stylesheet" type="text/css" />
+    
+    <script src="assets/adminlte/plugins/jquery/jquery.min.js"></script>
+
     <style>
-    a:link {
-      text-decoration: none;
-    }
-
-    a:visited {
-      text-decoration: none;
-    }
-    
-	body {
-	  font-size: .875rem;
-	}
-
-	.feather {
-	  width: 16px;
-	  height: 16px;
-	  vertical-align: text-bottom;
-	}
-
-	.sidebar {
-	  position: fixed;
-	  top: 0;
-	  right: 0;
-	  bottom: 0;
-	  left: 0;
-	  z-index: 100;
-	  padding: 48px 0 0;
-	  box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
-	}
-
-	@media (max-width: 767.98px) {
-	  .sidebar {
-		top: 5rem;
-	  }
-	}
-
-	.sidebar-sticky {
-	  position: relative;
-	  top: 0;
-	  height: calc(100vh - 48px);
-	  padding-top: .5rem;
-	  overflow-x: hidden;
-	  overflow-y: auto;
-	}
-
-	.sidebar .nav-link {
-	  font-weight: 500;
-	  color: #333;
-	}
-
-	.sidebar .nav-link .feather {
-	  margin-right: 4px;
-	  color: #727272;
-	}
-
-	.sidebar .nav-link.active {
-	  color: #007bff;
-	}
-
-	.sidebar .nav-link:hover .feather,
-	.sidebar .nav-link.active .feather {
-	  color: inherit;
-	}
-
-	.sidebar-heading {
-	  font-size: .75rem;
-	  text-transform: uppercase;
-	}
-
-	.navbar-brand {
-	  padding-top: .75rem;
-	  padding-bottom: .75rem;
-	  font-size: 1rem;
-	  background-color: rgba(0, 0, 0, .25);
-	  box-shadow: inset -1px 0 0 rgba(0, 0, 0, .25);
-	}
-
-	.navbar .navbar-toggler {
-	  top: .25rem;
-	  right: 1rem;
-	}
-	
-	.dashboard-member-activity-avatar {
-	  width: 64px;
-	  height: 64px;
-	  border-radius: 50%; /* Pour un affichage arrondi */
-	  object-fit: cover;  /* Pour éviter la déformation de l'image */
-	}
-	
-	/* MODIFICATION : Style pour Tagify */
-	.tagify{
-		--tag-bg: #0d6efd; /* Couleur de fond du tag (primary) */
-		--tag-text-color: #ffffff; /* Couleur du texte du tag */
-		border-color: #ced4da; /* Couleur de bordure Bootstrap */
-	}
-	.tagify__input{
-		font-size: 1rem;
-		line-height: 1.5;
-	}
-	/* FIN MODIFICATION */
-	
+        /* Correction pour que la table s'affiche correctement */
+        .dataTables_wrapper .row:first-child {
+            padding-top: 0.85em;
+        }
+        .dashboard-member-activity-avatar {
+          width: 64px;
+          height: 64px;
+          border-radius: 50%;
+          object-fit: cover;
+        }
+        /* Style pour Tagify */
+        .tagify{
+            --tag-bg: #007bff;
+            --tag-text-color: #ffffff;
+            border: 1px solid #ced4da;
+        }
+        .tagify__input{
+            font-size: 1rem;
+            line-height: 1.5;
+        }
     </style>
+</head>
+<body class="hold-transition sidebar-mini">
+<div class="wrapper">
 
-<body>
+    <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
+            </li>
+            <li class="nav-item d-none d-sm-inline-block">
+                <a href="<?php echo $settings['site_url']; ?>" class="nav-link" target="_blank"><i class="fas fa-eye"></i> Visit Site</a>
+            </li>
+        </ul>
 
-<header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
-	<a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 fs-6" href="dashboard.php"><b><i class="fas fa-toolbox"></i> phpBlog</b></a>
-	<button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Menu">
-		<span class="navbar-toggler-icon"></span>
-	</button>
-	<ul class="navbar-nav px-3 w-100">
-		<li class="nav-item text-nowrap">
-		<a class="nav-link" href="<?php echo $settings['site_url']; ?>"><i class="fas fa-columns"></i> Visit Site</a>
-		</li>
-	</ul>
-	<ul class="navbar-nav px-3">
-		<li class="nav-item text-nowrap">
-			<a class="nav-link" href="../logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
-		</li>
-	</ul>
-</header>
-
-<div class="container-fluid">
-  <div class="row">
-    <nav id="sidebarMenu" class="col-lg-2 d-md-block bg-dark text-white sidebar collapse" style="overflow-y: scroll;">
-      <div class="position-sticky pt-3">
-        <ul class="nav nav-pills flex-column mb-auto">
-          <li <?php
-if (basename($_SERVER['SCRIPT_NAME']) == 'dashboard.php') {
-    echo 'class="nav-item"';
-}
-?>>
-            <a class="nav-link text-white <?php
-if (basename($_SERVER['SCRIPT_NAME']) == 'dashboard.php') {
-    echo 'active';
-}
-?>" href="dashboard.php">
-              <i class="fas fa-columns"></i> Dashboard
-            </a>
-          </li>
-<?php
-if ($user['role'] == "Admin") {
-?>
-          <li <?php
-if (basename($_SERVER['SCRIPT_NAME']) == 'settings.php') {
-    echo 'class="nav-item"';
-}
-?>>
-            <a class="nav-link text-white <?php
-if (basename($_SERVER['SCRIPT_NAME']) == 'settings.php') {
-    echo 'active';
-}
-?>" href="settings.php">
-              <i class="fas fa-cogs"></i> Settings
-            </a>
-          </li>
-          <li <?php
-if (basename($_SERVER['SCRIPT_NAME']) == 'menu_editor.php' || basename($_SERVER['SCRIPT_NAME']) == 'add_menu.php') {
-    echo 'class="nav-item"';
-}
-?>>
-            <a class="nav-link text-white <?php
-if (basename($_SERVER['SCRIPT_NAME']) == 'menu_editor.php' || basename($_SERVER['SCRIPT_NAME']) == 'add_menu.php') {
-    echo 'active';
-}
-?>" href="menu_editor.php">
-              <i class="fas fa-bars"></i> Menu
-            </a>
-          </li>
-<?php
-}
-?>
-          <li <?php
-if (basename($_SERVER['SCRIPT_NAME']) == 'files.php' || basename($_SERVER['SCRIPT_NAME']) == 'upload_file.php') {
-    echo 'class="nav-item"';
-}
-?>>
-            <a class="nav-link text-white <?php
-if (basename($_SERVER['SCRIPT_NAME']) == 'files.php' || basename($_SERVER['SCRIPT_NAME']) == 'upload_file.php') {
-    echo 'active';
-}
-?>" href="files.php">
-              <i class="fas fa-folder-open"></i> Files
-            </a>
-          </li>
-<?php
-if ($user['role'] == "Admin") {
-?>
-          <li <?php
-if (basename($_SERVER['SCRIPT_NAME']) == 'messages.php' || basename($_SERVER['SCRIPT_NAME']) == 'read_message.php') {
-    echo 'class="nav-item"';
-}
-?>>
-            <a class="nav-link text-white <?php
-if (basename($_SERVER['SCRIPT_NAME']) == 'messages.php' || basename($_SERVER['SCRIPT_NAME']) == 'read_message.php') {
-    echo 'active';
-}
-?>" href="messages.php">
-              <i class="fas fa-envelope"></i> Messages
-            </a>
-          </li>
-          <li <?php
-if (basename($_SERVER['SCRIPT_NAME']) == 'users.php') {
-    echo 'class="nav-item"';
-}
-?>>
-            <a class="nav-link text-white <?php
-if (basename($_SERVER['SCRIPT_NAME']) == 'users.php') {
-    echo 'active';
-}
-?>" href="users.php">
-              <i class="fas fa-users"></i> Users
-            </a>
-          </li>
-		  <li <?php
-if (basename($_SERVER['SCRIPT_NAME']) == 'newsletter.php') {
-    echo 'class="nav-item"';
-}
-?>>
-            <a class="nav-link text-white <?php
-if (basename($_SERVER['SCRIPT_NAME']) == 'newsletter.php') {
-    echo 'active';
-}
-?>" href="newsletter.php">
-              <i class="far fa-envelope"></i> Newsletter
-            </a>
-          </li>
-<?php
-}
-?>
+        <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
+                <a class="nav-link" href="../logout" role="button">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </li>
         </ul>
-        
-        <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-secondary">
-          <span>Posts</span>
-        </h6>
-        <ul class="nav nav-pills flex-column mb-auto">
-          <li <?php
-if (basename($_SERVER['SCRIPT_NAME']) == 'add_post.php') {
-    echo 'class="nav-item"';
-}
-?>>
-            <a class="nav-link text-white <?php
-if (basename($_SERVER['SCRIPT_NAME']) == 'add_post.php') {
-    echo 'active';
-}
-?>" href="add_post.php">
-              <i class="fas fa-edit"></i> Add Post
-            </a>
-          </li>
-          <li <?php
-if (basename($_SERVER['SCRIPT_NAME']) == 'posts.php') {
-    echo 'class="nav-item"';
-}
-?>>
-            <a class="nav-link text-white <?php
-if (basename($_SERVER['SCRIPT_NAME']) == 'posts.php') {
-    echo 'active';
-}
-?>" href="posts.php">
-              <i class="fas fa-list"></i> Posts
-            </a>
-          </li>
-<?php
-if ($user['role'] == "Admin") {
-?>
-          <li <?php
-if (basename($_SERVER['SCRIPT_NAME']) == 'categories.php' || basename($_SERVER['SCRIPT_NAME']) == 'add_category.php') {
-    echo 'class="nav-item"';
-}
-?>>
-            <a class="nav-link text-white <?php
-if (basename($_SERVER['SCRIPT_NAME']) == 'categories.php' || basename($_SERVER['SCRIPT_NAME']) == 'add_category.php') {
-    echo 'active';
-}
-?>" href="categories.php">
-              <i class="fas fa-list-ol"></i> Categories
-            </a>
-          </li>
-          <li <?php
-if (basename($_SERVER['SCRIPT_NAME']) == 'comments.php') {
-    echo 'class="nav-item"';
-}
-?>>
-            <a class="nav-link text-white <?php
-if (basename($_SERVER['SCRIPT_NAME']) == 'comments.php') {
-    echo 'active';
-}
-?>" href="comments.php">
-              <i class="fas fa-comments"></i> Comments
-            </a>
-          </li>
-<?php
-}
-?>
-        </ul>
-<?php
-if ($user['role'] == "Admin") {
-?>
-        <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-secondary">
-          <span>Pages</span>
-        </h6>
-        <ul class="nav nav-pills flex-column mb-auto">
-          <li <?php
-if (basename($_SERVER['SCRIPT_NAME']) == 'add_page.php') {
-    echo 'class="nav-item"';
-}
-?>>
-            <a class="nav-link text-white <?php
-if (basename($_SERVER['SCRIPT_NAME']) == 'add_page.php') {
-    echo 'active';
-}
-?>" href="add_page.php">
-              <i class="fas fa-edit"></i> Add Page
-            </a>
-          </li>
-          <li <?php
-if (basename($_SERVER['SCRIPT_NAME']) == 'pages.php') {
-    echo 'class="nav-item"';
-}
-?>>
-            <a class="nav-link text-white <?php
-if (basename($_SERVER['SCRIPT_NAME']) == 'pages.php') {
-    echo 'active';
-}
-?>" href="pages.php">
-              <i class="fas fa-file-alt"></i> Pages
-            </a>
-          </li>
-        </ul>
-<?php
-}
-?>
-        
-        <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-secondary">
-          <span>Gallery</span>
-        </h6>
-        <ul class="nav nav-pills flex-column mb-auto">
-          <li <?php
-if (basename($_SERVER['SCRIPT_NAME']) == 'add_image.php') {
-    echo 'class="nav-item"';
-}
-?>>
-            <a class="nav-link text-white <?php
-if (basename($_SERVER['SCRIPT_NAME']) == 'add_image.php') {
-    echo 'active';
-}
-?>" href="add_image.php">
-              <i class="fas fa-camera-retro"></i> Add Image
-            </a>
-          </li>
-          <li <?php
-if (basename($_SERVER['SCRIPT_NAME']) == 'gallery.php') {
-    echo 'class="nav-item"';
-}
-?>>
-            <a class="nav-link text-white <?php
-if (basename($_SERVER['SCRIPT_NAME']) == 'gallery.php') {
-    echo 'active';
-}
-?>" href="gallery.php">
-              <i class="fas fa-images"></i> Gallery
-            </a>
-          </li>
-<?php
-if ($user['role'] == "Admin") {
-?>
-		  <li <?php
-if (basename($_SERVER['SCRIPT_NAME']) == 'albums.php' || basename($_SERVER['SCRIPT_NAME']) == 'add_album.php') {
-    echo 'class="nav-item"';
-}
-?>>
-            <a class="nav-link text-white <?php
-if (basename($_SERVER['SCRIPT_NAME']) == 'albums.php' || basename($_SERVER['SCRIPT_NAME']) == 'add_album.php') {
-    echo 'active';
-}
-?>" href="albums.php">
-              <i class="fas fa-list-ol"></i> Albums
-            </a>
-          </li>
-        </ul>
-        
-        <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-secondary">
-          <span>Widgets</span>
-        </h6>
-        <ul class="nav nav-pills flex-column mb-auto">
-          <li <?php
-if (basename($_SERVER['SCRIPT_NAME']) == 'add_widget.php') {
-    echo 'class="nav-item"';
-}
-?>>
-            <a class="nav-link text-white <?php
-if (basename($_SERVER['SCRIPT_NAME']) == 'add_widget.php') {
-    echo 'active';
-}
-?>" href="add_widget.php">
-              <i class="fas fa-edit"></i> Add Widget
-            </a>
-          </li>
-          <li <?php
-if (basename($_SERVER['SCRIPT_NAME']) == 'widgets.php') {
-    echo 'class="nav-item"';
-}
-?>>
-            <a class="nav-link text-white <?php
-if (basename($_SERVER['SCRIPT_NAME']) == 'widgets.php') {
-    echo 'active';
-}
-?>" href="widgets.php">
-              <i class="fas fa-archive"></i> Widgets
-            </a>
-          </li>
-        </ul>
-<?php
-}
-?>
-        <br /><br />
-      </div>
     </nav>
+    <aside class="main-sidebar sidebar-dark-primary elevation-4">
+        <a href="dashboard.php" class="brand-link">
+            <i class="fas fa-toolbox brand-image img-circle elevation-3" style="opacity: .8; padding-left: 10px; padding-top: 10px;"></i>
+            <span class="brand-text font-weight-light">phpBlog Admin</span>
+        </a>
 
-<main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 mb-4">
+        <div class="sidebar">
+            <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+                <div class="image">
+                    <img src="../<?php echo htmlspecialchars($user['avatar']); ?>" class="img-circle elevation-2" alt="User Image">
+                </div>
+                <div class="info">
+                    <a href="../profile" target="_blank" class="d-block"><?php echo htmlspecialchars($user['username']); ?></a>
+                </div>
+            </div>
+
+            <nav class="mt-2">
+                <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+                    
+                    <li class="nav-item">
+                        <a href="dashboard.php" class="nav-link <?php if ($current_page == 'dashboard.php') echo 'active'; ?>">
+                            <i class="nav-icon fas fa-columns"></i>
+                            <p>Dashboard</p>
+                        </a>
+                    </li>
+                    
+                    <?php if ($user['role'] == "Admin"): ?>
+                    <li class="nav-header">ADMINISTRATION</li>
+                    <li class="nav-item">
+                        <a href="settings.php" class="nav-link <?php if ($current_page == 'settings.php') echo 'active'; ?>">
+                            <i class="nav-icon fas fa-cogs"></i>
+                            <p>Settings</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="menu_editor.php" class="nav-link <?php if (in_array($current_page, ['menu_editor.php', 'add_menu.php'])) echo 'active'; ?>">
+                            <i class="nav-icon fas fa-bars"></i>
+                            <p>Menu</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="messages.php" class="nav-link <?php if (in_array($current_page, ['messages.php', 'read_message.php'])) echo 'active'; ?>">
+                            <i class="nav-icon fas fa-envelope"></i>
+                            <p>Messages</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="users.php" class="nav-link <?php if (in_array($current_page, ['users.php', 'add_user.php'])) echo 'active'; ?>">
+                            <i class="nav-icon fas fa-users"></i>
+                            <p>Users</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="newsletter.php" class="nav-link <?php if ($current_page == 'newsletter.php') echo 'active'; ?>">
+                            <i class="nav-icon far fa-envelope"></i>
+                            <p>Newsletter</p>
+                        </a>
+                    </li>
+                    <?php endif; ?>
+                    
+                    <li class="nav-header">CONTENT</li>
+                    
+                    <?php
+                    // Section POSTS (Treeview)
+                    $posts_pages = ['add_post.php', 'posts.php', 'categories.php', 'add_category.php', 'comments.php'];
+                    $is_posts_open = in_array($current_page, $posts_pages);
+                    ?>
+                    <li class="nav-item <?php if ($is_posts_open) echo 'menu-is-opening menu-open'; ?>">
+                        <a href="#" class="nav-link <?php if ($is_posts_open) echo 'active'; ?>">
+                            <i class="nav-icon fas fa-list"></i>
+                            <p>
+                                Posts
+                                <i class="right fas fa-angle-left"></i>
+                            </p>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            <li class="nav-item">
+                                <a href="add_post.php" class="nav-link <?php if ($current_page == 'add_post.php') echo 'active'; ?>">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Add Post</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="posts.php" class="nav-link <?php if ($current_page == 'posts.php') echo 'active'; ?>">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>All Posts</p>
+                                </a>
+                            </li>
+                            <?php if ($user['role'] == "Admin"): ?>
+                            <li class="nav-item">
+                                <a href="categories.php" class="nav-link <?php if (in_array($current_page, ['categories.php', 'add_category.php'])) echo 'active'; ?>">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Categories</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="comments.php" class="nav-link <?php if ($current_page == 'comments.php') echo 'active'; ?>">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Comments</p>
+                                </a>
+                            </li>
+                            <?php endif; ?>
+                        </ul>
+                    </li>
+
+                    <?php if ($user['role'] == "Admin"): ?>
+                    <?php
+                    // Section PAGES (Treeview)
+                    $pages_pages = ['add_page.php', 'pages.php'];
+                    $is_pages_open = in_array($current_page, $pages_pages);
+                    ?>
+                    <li class="nav-item <?php if ($is_pages_open) echo 'menu-is-opening menu-open'; ?>">
+                        <a href="#" class="nav-link <?php if ($is_pages_open) echo 'active'; ?>">
+                            <i class="nav-icon fas fa-file-alt"></i>
+                            <p>
+                                Pages
+                                <i class="right fas fa-angle-left"></i>
+                            </p>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            <li class="nav-item">
+                                <a href="add_page.php" class="nav-link <?php if ($current_page == 'add_page.php') echo 'active'; ?>">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Add Page</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="pages.php" class="nav-link <?php if ($current_page == 'pages.php') echo 'active'; ?>">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>All Pages</p>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <?php endif; ?>
+
+                    <?php
+                    // Section GALLERY (Treeview)
+                    $gallery_pages = ['add_image.php', 'gallery.php', 'albums.php', 'add_album.php'];
+                    $is_gallery_open = in_array($current_page, $gallery_pages);
+                    ?>
+                    <li class="nav-item <?php if ($is_gallery_open) echo 'menu-is-opening menu-open'; ?>">
+                        <a href="#" class="nav-link <?php if ($is_gallery_open) echo 'active'; ?>">
+                            <i class="nav-icon fas fa-images"></i>
+                            <p>
+                                Gallery
+                                <i class="right fas fa-angle-left"></i>
+                            </p>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            <li class="nav-item">
+                                <a href="add_image.php" class="nav-link <?php if ($current_page == 'add_image.php') echo 'active'; ?>">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Add Image</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="gallery.php" class="nav-link <?php if ($current_page == 'gallery.php') echo 'active'; ?>">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>All Images</p>
+                                </a>
+                            </li>
+                            <?php if ($user['role'] == "Admin"): ?>
+                            <li class="nav-item">
+                                <a href="albums.php" class="nav-link <?php if (in_array($current_page, ['albums.php', 'add_album.php'])) echo 'active'; ?>">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Albums</p>
+                                </a>
+                            </li>
+                            <?php endif; ?>
+                        </ul>
+                    </li>
+
+                    <?php if ($user['role'] == "Admin"): ?>
+                    <?php
+                    // Section WIDGETS (Treeview)
+                    $widgets_pages = ['add_widget.php', 'widgets.php'];
+                    $is_widgets_open = in_array($current_page, $widgets_pages);
+                    ?>
+                    <li class="nav-item <?php if ($is_widgets_open) echo 'menu-is-opening menu-open'; ?>">
+                        <a href="#" class="nav-link <?php if ($is_widgets_open) echo 'active'; ?>">
+                            <i class="nav-icon fas fa-archive"></i>
+                            <p>
+                                Widgets
+                                <i class="right fas fa-angle-left"></i>
+                            </p>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            <li class="nav-item">
+                                <a href="add_widget.php" class="nav-link <?php if ($current_page == 'add_widget.php') echo 'active'; ?>">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Add Widget</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="widgets.php" class="nav-link <?php if ($current_page == 'widgets.php') echo 'active'; ?>">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>All Widgets</p>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <?php endif; ?>
+
+                    <li class="nav-item">
+                        <a href="files.php" class="nav-link <?php if (in_array($current_page, ['files.php', 'upload_file.php'])) echo 'active'; ?>">
+                            <i class="nav-icon fas fa-folder-open"></i>
+                            <p>Files</p>
+                        </a>
+                    </li>
+                    
+                </ul>
+            </nav>
+            </div>
+        </aside>
+
+    <div class="content-wrapper">

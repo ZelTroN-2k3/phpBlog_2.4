@@ -7,6 +7,7 @@ if (isset($_POST['add'])) {
     validate_csrf_token();
     // --- FIN AJOUT ---
 
+    // --- (Toute votre logique PHP de traitement du formulaire reste identique) ---
     $title       = $_POST['title'];
     $slug        = generateSeoURL($title);
     $active      = $_POST['active']; // Sera "Draft", "Yes" ou "No"
@@ -105,7 +106,7 @@ if (isset($_POST['add'])) {
                     
                     // 3. Lier le tag à l'article (ignorer si la liaison existe déjà)
                     mysqli_stmt_bind_param($stmt_post_tag_insert, "ii", $post_id, $tag_id);
-                    @mysqli_stmt_execute($stmt_post_tag_insert); // Utiliser @ pour ignorer les erreurs de doublons si on ajoute un UNIQUE(post_id, tag_id)
+                    @mysqli_stmt_execute($stmt_post_tag_insert);
                 }
                 
                 mysqli_stmt_close($stmt_tag_find);
@@ -115,8 +116,7 @@ if (isset($_POST['add'])) {
         }
         // --- FIN GESTION DES TAGS ---
 
-        // ... (partie newsletter, reste inchangée) ...
-        // MODIFICATION : N'envoyer la newsletter que si l'article est "Publié"
+        // ... (partie newsletter) ...
         if ($post_id && $active == 'Yes') {
             $from     = $settings['email'];
             $sitename = $settings['sitename'];
@@ -130,7 +130,7 @@ if (isset($_POST['add'])) {
 <html>
 <body>
   <b><h1>' . $settings['sitename'] . '</h1><b/>
-  <h2>New post: <b><a href="' . $settings['site_url'] . '/post.php?id=' . $post_id . '" title="Read more">' . $title . '</a></b></h2><br />
+  <h2>New post: <b><a href="' . $settings['site_url'] . '/post?name=' . $slug . '" title="Read more">' . $title . '</a></b></h2><br />
 
   ' . html_entity_decode($content) . '
   
@@ -142,7 +142,6 @@ if (isset($_POST['add'])) {
                 
                 $headers = 'MIME-Version: 1.0' . "\r\n";
                 $headers .= 'Content-type: text/html; charset=utf-8' . "\r\n";
-
                 $headers .= 'From: ' . $from . '';
                 
                 @mail($to, $subject, $message, $headers);
@@ -153,12 +152,30 @@ if (isset($_POST['add'])) {
     echo '<meta http-equiv="refresh" content="0;url=posts.php">';
 }
 ?>
-	<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-		<h3 class="h3"><i class="fas fa-list"></i> Posts</h3>
-	</div> 
 
-    <div class="card">
-        <h6 class="card-header">Add Post</h6>         
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0"><i class="fas fa-edit"></i> Add Post</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="dashboard.php">Home</a></li>
+                    <li class="breadcrumb-item"><a href="posts.php">Posts</a></li>
+                    <li class="breadcrumb-item active">Add Post</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+<section class="content">
+    <div class="container-fluid">
+
+        <div class="card card-primary card-outline">
+            <div class="card-header">
+                <h3 class="card-title">Create a new post</h3>
+            </div>
             <div class="card-body">
                 <form name="post_form" action="" method="post" enctype="multipart/form-data">
                     <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
@@ -174,89 +191,90 @@ if (isset($_POST['add'])) {
 						<input type="file" name="image" class="form-control" />
 					</p>
 					
-                    <p>
-						<label>Statut</label><br />
-						<select name="active" class="form-select" required>
-							<option value="Draft" selected>Draft (draft)</option>
-                            <option value="Yes">Published (public)</option>
-							<option value="No">Inactive (hidden)</option>
-                        </select>
-					</p>
-                    <p>
-						<label>Featured</label><br />
-						<select name="featured" class="form-select" required>
-							<option value="Yes">Yes</option>
-							<option value="No" selected>No</option>
-                        </select>
-					</p>
-                    <p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Statut</label>
+                                <select name="active" class="form-control" required>
+                                    <option value="Draft" selected>Draft (draft)</option>
+                                    <option value="Yes">Published (public)</option>
+                                    <option value="No">Inactive (hidden)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Featured</label>
+                                <select name="featured" class="form-control" required>
+                                    <option value="Yes">Yes</option>
+                                    <option value="No" selected>No</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
 						<label>Publication Date</label>
 						<input type="datetime-local" class="form-control" name="publish_at" value="<?php echo date('Y-m-d\TH:i'); ?>" required>
 						<i>By default, it's now. Change to schedule publication.</i>
-					</p>                    
-					<p>
-						<label>Category</label><br />
-						<select name="category_id" class="form-select" required>
-<?php
-$crun = mysqli_query($connect, "SELECT * FROM `categories`");
-while ($rw = mysqli_fetch_assoc($crun)) {
-    echo '
-                            <option value="' . $rw['id'] . '">' . $rw['category'] . '</option>
-									';
-}
-?>
+					</div>                    
+					<div class="form-group">
+						<label>Category</label>
+						<select name="category_id" class="form-control" required>
+                        <?php
+                        $crun = mysqli_query($connect, "SELECT * FROM `categories`");
+                        while ($rw = mysqli_fetch_assoc($crun)) {
+                            echo '
+                                    <option value="' . $rw['id'] . '">' . $rw['category'] . '</option>
+                                            ';
+                        }
+                        ?>
 						</select>
-					</p>
+					</div>
 					
-					<p>
+					<div class="form-group">
 						<label>Tags</label>
 						<input name="tags" class="form-control" value="" placeholder="php, javascript, css">
 						<i>Separate tags with a comma or Enter.</i>
-					</p>
-					<p>
+					</div>
+					<div class="form-group">
 						<label>Download link (.rar, .zip)</label>
 						<div class="input-group">
-							<span class="input-group-text"><i class="fas fa-file-archive"></i></span>
+                            <div class="input-group-prepend">
+							    <span class="input-group-text"><i class="fas fa-file-archive"></i></span>
+                            </div>
 							<input class="form-control" name="download_link" value="" type="url" placeholder="https://.../file.zip">
 						</div>
-					</p>
-					<p>
+					</div>
+					<div class="form-group">
 						<label>GitHub link</label>
 						<div class="input-group">
-							<span class="input-group-text"><i class="fab fa-github"></i></span>
+                            <div class="input-group-prepend">
+							    <span class="input-group-text"><i class="fab fa-github"></i></span>
+                            </div>
 							<input class="form-control" name="github_link" value="" type="url" placeholder="https://github.com/user/repo">
 						</div>
-					</p>
-					<p>
+					</div>
+					<div class="form-group">
 						<label>Content</label>
 						<textarea class="form-control" id="summernote" rows="8" name="content" required></textarea>
-					</p>
+					</div>
 								
 					<input type="submit" name="add" class="btn btn-primary col-12" value="Add" />
 				</form>                      
             </div>
-    </div>
+        </div>
 
+    </div></section>
 <script>
 $(document).ready(function() {
-	$('#summernote').summernote({height: 350});
-	
-	var noteBar = $('.note-toolbar');
-		noteBar.find('[data-toggle]').each(function() {
-		$(this).attr('data-bs-toggle', $(this).attr('data-toggle')).removeAttr('data-toggle');
-	});
+	// L'activation de Summernote est dans footer.php
 
 	// --- DÉBUT INITIALISATION TAGIFY ---
-	// Récupère l'élément input
 	var input = document.querySelector('input[name=tags]');
-	
-	// Initialise Tagify
 	new Tagify(input, {
-		// N'autorise que les tags qui n'existent pas déjà
 		duplicate: false, 
-		// Sépare les tags sur la touche "virgule"
 		delimiters: ",", 
-		// Ajoute un tag quand on clique en dehors du champ
 		addTagOnBlur: true 
 	});
 	// --- FIN INITIALISATION TAGIFY ---

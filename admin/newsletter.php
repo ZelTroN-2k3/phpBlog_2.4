@@ -9,14 +9,36 @@ if (isset($_GET['unsubscribe'])) {
     mysqli_stmt_bind_param($stmt, "s", $unsubscribe_email);
     mysqli_stmt_execute($stmt);
     mysqli_stmt_close($stmt);
+    
+    // Rediriger pour nettoyer l'URL
+    echo '<meta http-equiv="refresh" content="0; url=newsletter.php">';
+    exit;
 }
 ?>
-	<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-		<h3 class="h3"><i class="far fa-envelope"></i> Newsletter</h3>
-	</div>
 
-        <div class="card">
-			<h6 class="card-header">Send mass message</h6>         
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0"><i class="far fa-envelope"></i> Newsletter</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="dashboard.php">Home</a></li>
+                    <li class="breadcrumb-item active">Newsletter</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+<section class="content">
+    <div class="container-fluid">
+
+        <div class="card card-primary card-outline">
+			<div class="card-header">
+                <h3 class="card-title">Send mass message</h3>
+            </div>         
+			<form action="" method="post">
 			<div class="card-body">
 <?php
 if (isset($_POST['send_mass_message'])) {
@@ -59,75 +81,72 @@ if (isset($_POST['send_mass_message'])) {
         @mail($to, $subject, $message, $headers);
     }
     
-    echo '<div class="alert alert-success">Your global message has been sent successfully.</div>';
+    echo '
+        <div class="alert alert-success alert-dismissible">
+            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+            Your global message has been sent successfully.
+        </div>';
 }
 ?>
-				<form action="" method="post">
-                    <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
-                    <p>
-						<label>Title</label>
-						<input class="form-control" name="title" value="" type="text" required>
-					</p>
-					<p>
-						<label>Content</label>
-						<textarea class="form-control" id="summernote" name="content" required></textarea>
-					</p>
-								
-					<input type="submit" name="send_mass_message" class="btn btn-primary col-12" value="Send" />
-				</form>
+                <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                <div class="form-group">
+					<label>Title</label>
+					<input class="form-control" name="title" value="" type="text" required>
+				</div>
+				<div class="form-group">
+					<label>Content</label>
+					<textarea class="form-control" id="summernote" name="content" required></textarea>
+				</div>
+            </div>
+            <div class="card-footer">
+				<input type="submit" name="send_mass_message" class="btn btn-primary" value="Send" />
 			</div>
-        </div><br />
+			</form>
+        </div>
 			
-			<div class="card">
-              <h6 class="card-header">Subscribers</h6>         
-                  <div class="card-body">
-                    <table class="table table-border table-hover" id="dt-basic" width="100%">
-                          <thead>
-                              <tr>
-                                  <th>E-Mail</th>
-								  <th>Actions</th>
-                              </tr>
-                          </thead>
-                          <tbody>
+        <div class="card">
+			<div class="card-header">
+                <h3 class="card-title">Subscribers List</h3>
+            </div>         
+            <div class="card-body">
+                <table class="table table-bordered table-hover" id="dt-basic" width="100%">
+                    <thead>
+                        <tr>
+                            <th>E-Mail</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
 <?php
 $query = mysqli_query($connect, "SELECT * FROM newsletter ORDER BY email ASC");
 while ($row = mysqli_fetch_assoc($query)) {
     echo '
-                            <tr>
-                                <td>' . htmlspecialchars($row['email']) . '</td>
-								<td>
-									<a href="?unsubscribe=' . urlencode($row['email']) . '&token=' . $csrf_token . '" class="btn btn-danger btn-sm"><i class="fas fa-bell-slash"></i> Unsubscribe</a>
-								</td>
-                            </tr>
+                        <tr>
+                            <td>' . htmlspecialchars($row['email']) . '</td>
+                            <td>
+                                <a href="?unsubscribe=' . urlencode($row['email']) . '&token=' . $csrf_token . '" class="btn btn-danger btn-sm" onclick="return confirm(\'Êtes-vous sûr de vouloir désabonner cet e-mail ?\');"><i class="fas fa-bell-slash"></i> Unsubscribe</a>
+                            </td>
+                        </tr>
 ';
-    }
+}
 ?>
-                          </tbody>
-                     </table>
-                  </div>
+                    </tbody>
+                </table>
             </div>
+        </div>
 
+    </div></section>
 <script>
 $(document).ready(function() {
-
-	$('#dt-basic').dataTable( {
-		"responsive": true,
-		"order": [[ 0, "asc" ]],
-		"language": {
-			"paginate": {
-			  "previous": '<i class="fa fa-angle-left"></i>',
-			  "next": '<i class="fa fa-angle-right"></i>'
-			}
-		}
-	} );
-	
-	$('#summernote').summernote({height: 350});
-	
-	var noteBar = $('.note-toolbar');
-		noteBar.find('[data-toggle]').each(function() {
-		$(this).attr('data-bs-toggle', $(this).attr('data-toggle')).removeAttr('data-toggle');
+    // Activation de DataTables avec ordre par défaut ascendant (colonne 0: Email)
+	$('#dt-basic').DataTable({
+        "responsive": true,
+        "lengthChange": false, 
+        "autoWidth": false,
+		"order": [[ 0, "asc" ]] 
 	});
-} );
+    // Note : Summernote est initialisé dans footer.php via une vérification
+});
 </script>
 <?php
 include "footer.php";

@@ -9,11 +9,31 @@ if (isset($_GET['delete-id'])) {
     mysqli_stmt_bind_param($stmt, "i", $id);
     mysqli_stmt_execute($stmt);
     mysqli_stmt_close($stmt);
+    
+    // Rediriger pour nettoyer l'URL
+    echo '<meta http-equiv="refresh" content="0; url=comments.php">';
+    exit;
 }
 ?>
-	<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-		<h3 class="h3"><i class="fas fa-comments"></i> Comments</h3>
-	</div>
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0"><i class="fas fa-comments"></i> Comments</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="dashboard.php">Home</a></li>
+                    <li class="breadcrumb-item"><a href="posts.php">Posts</a></li>
+                    <li class="breadcrumb-item active">Comments</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+<section class="content">
+    <div class="container-fluid">
 
 <?php
 if (isset($_GET['edit-id'])) {
@@ -33,8 +53,11 @@ if (isset($_GET['edit-id'])) {
     }
     
     $author_name = $row['user_id'];
+    $avatar = 'assets/img/avatar.png'; // Valeur par défaut
+    
     if ($row['guest'] == 'Yes') {
         $avatar = 'assets/img/avatar.png';
+        $author_name = $row['user_id']; // Le nom de l'invité
     } else {
         // Use prepared statement to get user info
         $stmt_user = mysqli_prepare($connect, "SELECT * FROM `users` WHERE id=? LIMIT 1");
@@ -65,26 +88,28 @@ if (isset($_GET['edit-id'])) {
         echo '<meta http-equiv="refresh" content="0; url=comments.php">';
     }
 ?>
-            <div class="card mb-3">
-              <h6 class="card-header">Edit Comment</h6>         
-                  <div class="card-body">
-					<form action="" method="post">
-                        <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
-                        <p>
-						  <label>Author</label><br />
-						  <input class="form-control" name="author" type="text" value="<?php
+            <div class="card card-primary card-outline mb-3">
+              <div class="card-header">
+                  <h3 class="card-title">Edit Comment</h3>
+              </div>         
+                <form action="" method="post">
+                <div class="card-body">
+					<input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                    <div class="form-group">
+						<label>Author</label><br />
+						<input class="form-control" name="author" type="text" value="<?php
     echo htmlspecialchars($author_name); // Prevent XSS
 ?>" disabled>
-						</p>
-						<p>
-						  <label>Avatar</label><br />
-						  <img src="../<?php
+					</div>
+					<div class="form-group">
+						<label>Avatar</label><br />
+						<img src="../<?php
     echo htmlspecialchars($avatar); // Prevent XSS on path
-?>" width="50px" height="50px" /><br />
-						</p>
-						<p>
-						  <label>Approved</label><br />
-						  <select class="form-select" name="approved" required>
+?>" width="50px" height="50px" class="img-circle elevation-2 mb-2" /><br />
+					</div>
+					<div class="form-group">
+						<label>Approved</label>
+						<select class="form-control" name="approved" required>
 							<option value="Yes" <?php
     if ($row['approved'] == "Yes") {
         echo 'selected';
@@ -95,37 +120,42 @@ if (isset($_GET['edit-id'])) {
         echo 'selected';
     }
 ?>>No</option>
-						  </select>
-						</p>
-						<p>
-						  <label>Comment</label>
-						  <textarea name="comment" class="form-control" rows="6" disabled><?php
+						</select>
+					</div>
+					<div class="form-group">
+						<label>Comment (Read Only)</label>
+						<textarea name="comment" class="form-control" rows="6" disabled><?php
     echo htmlspecialchars($row['comment']); // Prevent XSS
 ?></textarea>
-						</p>
-						
-						<input type="submit" class="btn btn-primary col-12" name="submit" value="Update" /><br />
-					  </form>
-                  </div>
-              </div>
+					</div>
+                </div>
+                <div class="card-footer">
+					<input type="submit" class="btn btn-primary" name="submit" value="Update" />
+                    <a href="comments.php" class="btn btn-secondary">Annuler</a>
+                </div>
+				</form>
+            </div>
 <?php
 }
 ?>
 			
 			<div class="card">
-              <h6 class="card-header">Comments</h6>         
-                  <div class="card-body">
+                <div class="card-header">
+                    <h3 class="card-title">Comments List</h3>
+                </div>         
+                <div class="card-body">
 
-            <table class="table table-border table-hover" id="dt-basic" width="100%">
-                <thead>
-				<tr>
-                    <th>Author</th>
-                    <th>Date</th>
-					<th>Approved</th>
-					<th>Post</th>
-					<th>Actions</th>
-                </tr>
-				</thead>
+                    <table class="table table-bordered table-hover" id="dt-basic" style="width:100%">
+                        <thead>
+                        <tr>
+                            <th>Author</th>
+                            <th>Date</th>
+                            <th>Approved</th>
+                            <th>Post</th>
+                            <th>Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
 <?php
 $sql    = "SELECT * FROM comments ORDER BY id DESC";
 $result = mysqli_query($connect, $sql);
@@ -134,7 +164,7 @@ while ($row = mysqli_fetch_assoc($result)) {
     $badge  = '';
     if ($row['guest'] == 'Yes') {
         $avatar = 'assets/img/avatar.png';
-        $author_name = 'Guest';
+        $author_name = $row['user_id']; // Utilise le nom de l'invité
         $badge  = ' <span class="badge bg-info"><i class="fas fa-user"></i> Guest</span>';
         
     } else {
@@ -163,7 +193,7 @@ while ($row = mysqli_fetch_assoc($result)) {
 
     echo '
                 <tr>
-	                <td><img src="../' . htmlspecialchars($avatar) . '" width="45px" height="45px" /> ' . htmlspecialchars($author_name) . '' . $badge . '</td>
+	                <td><img src="../' . htmlspecialchars($avatar) . '" width="45px" height="45px" class="img-circle elevation-2" /> ' . htmlspecialchars($author_name) . '' . $badge . '</td>
 	                <td data-sort="' . strtotime($row['created_at']) . '">' . date($settings['date_format'] . ' H:i', strtotime($row['created_at'])) . '</td>
 					<td>';
 	if($row['approved'] == "Yes") {
@@ -175,31 +205,29 @@ while ($row = mysqli_fetch_assoc($result)) {
     echo '              <td>' . htmlspecialchars($post_title) . '</td>
 					<td>
 					    <a href="?edit-id=' . $row['id'] . '" title="View / Edit" class="btn btn-primary btn-sm"><i class="fa fa-edit"></i> View / Edit</a>
-						<a href="?delete-id=' . $row['id'] . '&token=' . $csrf_token . '" class="btn btn-danger btn-sm"><i class="fa fa-trash"></i> Delete</a>
+						<a href="?delete-id=' . $row['id'] . '&token=' . $csrf_token . '" class="btn btn-danger btn-sm" onclick="return confirm(\'Êtes-vous sûr de vouloir supprimer ce commentaire ?\');"><i class="fa fa-trash"></i> Delete</a>
 					</td>
                 </tr>
 ';
 }
-echo '</table>';
 ?>
-                  </div>
-              </div>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
 			  
 <script>
 $(document).ready(function() {
-
-	$('#dt-basic').dataTable( {
-		"responsive": true,
-		"order": [[ 1, "desc" ]],
-		"language": {
-			"paginate": {
-			  "previous": '<i class="fa fa-angle-left"></i>',
-			  "next": '<i class="fa fa-angle-right"></i>'
-			}
-		}
-	} );
-} );
+    // Activation de DataTables avec ordre par défaut descendant (colonne 1: Date)
+	$('#dt-basic').DataTable({
+        "responsive": true,
+        "lengthChange": false, 
+        "autoWidth": false,
+		"order": [[ 1, "desc" ]] 
+	});
+});
 </script>
+</section>
 <?php
 include "footer.php";
 ?>

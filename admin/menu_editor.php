@@ -2,6 +2,7 @@
 include "header.php";
 
 if (isset($_GET['up-id'])) {
+    // Logique de déplacement UP (reste la même)
     $id = (int) $_GET["up-id"];
 
     // Get previous menu item's ID
@@ -40,12 +41,16 @@ if (isset($_GET['up-id'])) {
             mysqli_commit($connect);
         } catch (mysqli_sql_exception $exception) {
             mysqli_rollback($connect);
-            // You might want to log the error or show a message
+            // Vous pouvez ajouter une gestion d'erreur ici si nécessaire
         }
     }
+    // Rediriger pour nettoyer l'URL après action
+    echo '<meta http-equiv="refresh" content="0; url=menu_editor.php">';
+    exit;
 }
 
 if (isset($_GET['down-id'])) {
+    // Logique de déplacement DOWN (reste la même)
     $id = (int) $_GET["down-id"];
 
     // Get next menu item's ID
@@ -84,9 +89,12 @@ if (isset($_GET['down-id'])) {
             mysqli_commit($connect);
         } catch (mysqli_sql_exception $exception) {
             mysqli_rollback($connect);
-            // You might want to log the error or show a message
+            // Vous pouvez ajouter une gestion d'erreur ici si nécessaire
         }
     }
+    // Rediriger pour nettoyer l'URL après action
+    echo '<meta http-equiv="refresh" content="0; url=menu_editor.php">';
+    exit;
 }
 
 if (isset($_GET['delete-id'])) {
@@ -97,11 +105,30 @@ if (isset($_GET['delete-id'])) {
     mysqli_stmt_bind_param($stmt, "i", $id);
     mysqli_stmt_execute($stmt);
     mysqli_stmt_close($stmt);
+    
+    // Rediriger pour nettoyer l'URL
+    echo '<meta http-equiv="refresh" content="0; url=menu_editor.php">';
+    exit;
 }
 ?>
-      <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-			<h3 class="h3"><i class="fas fa-bars"></i> Menu Editor</h3>
-	  </div>
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0"><i class="fas fa-bars"></i> Menu Editor</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="dashboard.php">Home</a></li>
+                    <li class="breadcrumb-item active">Menu Editor</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+<section class="content">
+    <div class="container-fluid">
 	  
 <?php
 if (isset($_GET['edit-id'])) {
@@ -138,51 +165,58 @@ if (isset($_GET['edit-id'])) {
         echo '<meta http-equiv="refresh" content="0;url=menu_editor.php">';
     }
 ?>
-            <div class="card mb-3">
-              <h6 class="card-header">Edit Menu</h6>         
-                  <div class="card-body">
-                  <form action="" method="post">
+            <div class="card card-primary card-outline mb-3">
+              <div class="card-header">
+                <h3 class="card-title">Edit Menu Item</h3>
+              </div>         
+                <form action="" method="post">
+                <div class="card-body">
                     <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
-                    <p>
-                  	<label>Page</label>
-                  	<input name="page" class="form-control" type="text" value="<?php
+                    <div class="form-group">
+                  	    <label>Page Title</label>
+                  	    <input name="page" class="form-control" type="text" value="<?php
 echo htmlspecialchars($row['page']);
 ?>" required>
-                  </p>
-                  <p>
-                  	<label>Path (Link)</label>
-                  	<input name="path" class="form-control" type="text" value="<?php
+                    </div>
+                    <div class="form-group">
+                  	    <label>Path (Link)</label>
+                  	    <input name="path" class="form-control" type="text" value="<?php
 echo htmlspecialchars($row['path']);
 ?>" required>
-                  </p>
-                  <p>
-                  	<label>Font Awesome 5 Icon</label>
-                  	<input name="fa_icon" class="form-control" type="text" value="<?php
+                    </div>
+                    <div class="form-group">
+                  	    <label>Font Awesome 5 Icon</label>
+                  	    <input name="fa_icon" class="form-control" type="text" value="<?php
 echo htmlspecialchars($row['fa_icon']);
 ?>">
-                  </p>
-                  <input type="submit" class="btn btn-success col-12" name="submit" value="Save" />
-                  </form>
-                  </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <input type="submit" class="btn btn-success" name="submit" value="Save" />
+                    <a href="menu_editor.php" class="btn btn-secondary">Annuler</a>
+                </div>
+                </form>
             </div>
 <?php
 }
 ?>
 
             <div class="card">
-              <h6 class="card-header">Menu Editor</h6>         
-                  <div class="card-body">
-				  <a href="add_menu.php" class="btn btn-primary col-12"><i class="fa fa-edit"></i> Add Menu</a><br /><br />
-
-            <table class="table table-border table-hover">
-                <thead>
-				<tr>
-                    <th>Order</th>
-                    <th>Page</th>
-					<th>Path</th>
-					<th>Actions</th>
-                </tr>
-				</thead>
+              <div class="card-header">
+                <h3 class="card-title">
+                    <a href="add_menu.php" class="btn btn-primary"><i class="fa fa-plus"></i> Add Menu Item</a>
+                </h3>
+              </div>         
+                <div class="card-body p-0"> <table class="table table-bordered table-hover">
+                        <thead>
+                        <tr>
+                            <th style="width: 50px;">Order</th>
+                            <th>Page</th>
+                            <th>Path</th>
+                            <th style="width: 250px;">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
 <?php
 $query = mysqli_query($connect, "SELECT * FROM menu ORDER BY id ASC");
 
@@ -212,16 +246,19 @@ echo '
 }
 echo '
                     <a href="?edit-id=' . $row['id'] . '" class="btn btn-primary btn-sm"><i class="fa fa-edit"></i> Edit</a>
-                    <a href="?delete-id=' . $row['id'] . '&token=' . $csrf_token . '" class="btn btn-danger btn-sm"><i class="fa fa-trash"></i> Delete</a>
+                    <a href="?delete-id=' . $row['id'] . '&token=' . $csrf_token . '" class="btn btn-danger btn-sm" onclick="return confirm(\'Êtes-vous sûr de vouloir supprimer cet élément de menu ?\');"><i class="fa fa-trash"></i> Delete</a>
                 </td>
             </tr>
 ';
 $first = false;
 }
 ?>
-            </table>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-        </div>
+
+    </div></section>
 <?php
 include "footer.php";
 ?>

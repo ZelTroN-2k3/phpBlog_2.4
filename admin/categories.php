@@ -14,11 +14,30 @@ if (isset($_GET['delete-id'])) {
     mysqli_stmt_bind_param($stmt, "i", $id);
     mysqli_stmt_execute($stmt);
     mysqli_stmt_close($stmt);
+    
+    // Rediriger pour nettoyer l'URL
+    echo '<meta http-equiv="refresh" content="0; url=categories.php">';
+    exit;
 }
 ?>
-	<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-		<h3 class="h3"><i class="fas fa-list-ol"></i> Categories</h3>
-	</div>
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0"><i class="fas fa-list-ol"></i> Categories</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="dashboard.php">Home</a></li>
+                    <li class="breadcrumb-item active">Categories</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+<section class="content">
+    <div class="container-fluid">
 	  
 <?php
 if (isset($_GET['edit-id'])) {
@@ -68,37 +87,42 @@ if (isset($_GET['edit-id'])) {
         }
     }
 ?>
-            <div class="card mb-3">
-              <h6 class="card-header">Edit Category</h6>         
-                  <div class="card-body">
-                      <form action="" method="post">
-                        <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
-                        <p>
-                          <label>Category</label>
-                          <input class="form-control" name="category" type="text" value="<?php
+            <div class="card card-primary card-outline mb-3">
+                <div class="card-header">
+                    <h3 class="card-title">Edit Category</h3>
+                </div>
+                <div class="card-body">
+                    <form action="" method="post">
+                    <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                    <div class="form-group">
+                        <label>Category</label>
+                        <input class="form-control" name="category" type="text" value="<?php
     echo htmlspecialchars($row['category']); // Prevent XSS
 ?>" required>
-						</p>
-                        <input type="submit" class="btn btn-primary col-12" name="submit" value="Save" /><br />
-                      </form>
-                  </div>
+                    </div>
+                    <input type="submit" class="btn btn-primary col-12" name="submit" value="Save" />
+                    </form>
+                </div>
             </div>
 <?php
 }
 ?>
 
             <div class="card">
-              <h6 class="card-header">Categories</h6>         
-                  <div class="card-body">
-				  <a href="add_category.php" class="btn btn-primary col-12"><i class="fa fa-edit"></i> Add Category</a><br /><br />
-
-            <table class="table table-border table-hover">
-                <thead>
-				<tr>
-                    <th>Category</th>
-					<th>Actions</th>
-                </tr>
-				</thead>
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <a href="add_category.php" class="btn btn-primary"><i class="fa fa-edit"></i> Add Category</a>
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <table class="table table-bordered table-hover" id="dt-basic" style="width:100%">
+                        <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
 <?php
 $sql    = "SELECT * FROM categories ORDER BY category ASC";
 $result = mysqli_query($connect, $sql);
@@ -114,10 +138,12 @@ while ($row = mysqli_fetch_assoc($result)) {
 ';
 }
 ?>
-            </table>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
 
-                  </div>
-              </div>
+    </div></section>
 <?php
 include "footer.php";
 ?>

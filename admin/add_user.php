@@ -37,9 +37,21 @@ if (isset($_POST['add_user'])) {
         $result_email = mysqli_stmt_get_result($stmt_email);
 
         if (mysqli_num_rows($result_user) > 0) {
-            $error_message = '<div class="alert alert-warning">Ce nom d\'utilisateur est déjà pris.</div>';
+            // Utiliser la classe AdminLTE pour les alertes
+            $error_message = '
+                <div class="alert alert-warning alert-dismissible">
+                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                    <h5><i class="icon fas fa-exclamation-triangle"></i> Attention !</h5>
+                    Ce nom d\'utilisateur est déjà pris.
+                </div>';
         } elseif (mysqli_num_rows($result_email) > 0) {
-            $error_message = '<div class="alert alert-warning">Cette adresse email est déjà utilisée.</div>';
+            // Utiliser la classe AdminLTE pour les alertes
+            $error_message = '
+                <div class="alert alert-warning alert-dismissible">
+                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                    <h5><i class="icon fas fa-exclamation-triangle"></i> Attention !</h5>
+                    Cette adresse email est déjà utilisée.
+                </div>';
         } else {
             // 3. Hasher le mot de passe
             $password_hashed = password_hash($password, PASSWORD_DEFAULT);
@@ -61,43 +73,62 @@ if (isset($_POST['add_user'])) {
 }
 ?>
 
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h3 class="h3"><i class="fas fa-users"></i> Utilisateurs</h3>
-</div>
-
-<?php echo $error_message; ?>
-
-<div class="card">
-    <h6 class="card-header">Ajouter un nouvel utilisateur</h6>
-    <div class="card-body">
-        <form action="" method="post">
-            <p>
-                <label>Nom d'utilisateur</label>
-                <input class="form-control" name="username" value="<?php echo isset($_POST['username']) ? htmlspecialchars($_POST['username']) : ''; ?>" type="text" required>
-            </p>
-            <p>
-                <label>Adresse Email</label>
-                <input class="form-control" name="email" value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>" type="email" required>
-            </p>
-            <p>
-                <label>Mot de passe</label>
-                <input class="form-control" name="password" value="" type="password" required>
-            </p>
-            <p>
-                <label>Rôle</label>
-                <select name="role" class="form-select" required>
-                    <option value="User" selected>Utilisateur (User)</option>
-                    <option value="Editor">Éditeur (Editor)</option>
-                    <option value="Admin">Administrateur (Admin)</option>
-                </select>
-            </p>
-            <div class="form-actions">
-                <input type="submit" name="add_user" class="btn btn-primary col-12" value="Créer l'utilisateur" />
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0"><i class="fas fa-user-plus"></i> Add User</h1>
             </div>
-        </form>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="dashboard.php">Home</a></li>
+                    <li class="breadcrumb-item"><a href="users.php">Users</a></li>
+                    <li class="breadcrumb-item active">Add User</li>
+                </ol>
+            </div>
+        </div>
     </div>
 </div>
+<section class="content">
+    <div class="container-fluid">
+        
+        <?php echo $error_message; ?>
 
+        <div class="card card-primary card-outline">
+            <div class="card-header">
+                <h3 class="card-title">Ajouter un nouvel utilisateur</h3>
+            </div>
+            <form action="" method="post">
+            <div class="card-body">
+                <div class="form-group">
+                    <label>Nom d'utilisateur</label>
+                    <input class="form-control" name="username" value="<?php echo isset($_POST['username']) ? htmlspecialchars($_POST['username']) : ''; ?>" type="text" required>
+                </div>
+                <div class="form-group">
+                    <label>Adresse Email</label>
+                    <input class="form-control" name="email" value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>" type="email" required>
+                </div>
+                <div class="form-group">
+                    <label>Mot de passe</label>
+                    <input class="form-control" name="password" value="" type="password" required>
+                </div>
+                <div class="form-group">
+                    <label>Rôle</label>
+                    <select name="role" class="form-control" required>
+                        <option value="User" selected>Utilisateur (User)</option>
+                        <option value="Editor">Éditeur (Editor)</option>
+                        <option value="Admin">Administrateur (Admin)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="card-footer">
+                <input type="submit" name="add_user" class="btn btn-primary col-12" value="Créer l'utilisateur" />
+            </div>
+            </form>
+        </div>
+
+    </div>
+</section>
 <?php
 include "footer.php";
 ?>
