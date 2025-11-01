@@ -8,7 +8,7 @@ header('Content-Type: application/json');
 // Initialiser le tableau de réponse
 $response = [
     'success' => false,
-    'message' => 'Une erreur inconnue est survenue.',
+    'message' => 'An unknown error occurred.',
     'html' => '',
     'parent_id' => 0
 ];
@@ -16,7 +16,7 @@ $response = [
 // --- Validation des données ---
 // 1. Vérifier si les données POST existent
 if (!isset($_POST['comment'], $_POST['parent_id'], $_POST['post_id'])) {
-    $response['message'] = 'Données de formulaire manquantes.';
+    $response['message'] = 'Missing form data.';
     echo json_encode($response);
     exit;
 }
@@ -36,7 +36,7 @@ if ($logged == 'No' && $settings['comments'] == 'guests') {
 }
 
 if ($cancomment == 'No') {
-    $response['message'] = 'Vous devez être connecté pour commenter.';
+    $response['message'] = 'You must be logged in to comment.';
     echo json_encode($response);
     exit;
 }
@@ -50,7 +50,7 @@ if ($logged == 'No') {
     // 4a. Vérifier le reCAPTCHA pour les invités
     $captcha = $_POST['g-recaptcha-response'] ?? '';
     if (empty($captcha)) {
-        $response['message'] = 'Veuillez compléter le reCAPTCHA.';
+        $response['message'] = 'Please complete the reCAPTCHA.';
         echo json_encode($response);
         exit;
     }
@@ -60,7 +60,7 @@ if ($logged == 'No') {
     $responseKeys = json_decode($recaptcha_response, true);
     
     if (!$responseKeys["success"]) {
-        $response['message'] = 'Échec de la vérification reCAPTCHA.';
+        $response['message'] = 'Failed reCAPTCHA verification.';
         echo json_encode($response);
         exit;
     }
@@ -68,7 +68,7 @@ if ($logged == 'No') {
     // 4b. Vérifier le nom de l'invité
     if (strlen($author) < 2) {
         $authname_problem = 'Yes';
-        $response['message'] = 'Votre nom est trop court.';
+        $response['message'] = 'Your name is too short.';
     }
 } else {
     $author = $rowu['id']; // ID de l'utilisateur connecté
@@ -76,7 +76,7 @@ if ($logged == 'No') {
 
 // 5. Vérifier la longueur du commentaire
 if (strlen($comment) < 2) {
-    $response['message'] = 'Votre commentaire est trop court.';
+    $response['message'] = 'Your comment is too short.';
     echo json_encode($response);
     exit;
 }
@@ -130,13 +130,13 @@ if (mysqli_stmt_execute($stmt)) {
 
     // Générer le HTML du nouveau commentaire
     $response['success'] = true;
-    $response['message'] = 'Commentaire publié !';
+    $response['message'] = 'Comment published!';
     $response['html'] = render_comment_html($new_comment_id, $margin_left);
     $response['parent_id'] = $parent_id;
 
 } else {
     // Erreur lors de l'insertion
-    $response['message'] = 'Erreur lors de l\'enregistrement du commentaire.';
+    $response['message'] = 'Error saving comment.';
 }
 
 // Envoyer la réponse JSON finale

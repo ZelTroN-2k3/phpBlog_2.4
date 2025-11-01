@@ -243,7 +243,7 @@ function display_comments($post_id, $parent_id = 0, $level = 0) {
                 <hr class="my-0" />
                 <div class="p-2">
                     <button class="btn btn-sm btn-link" onclick="replyToComment(' . $comment['id'] . ')">
-                        <i class="fas fa-reply"></i> Répondre
+                        <i class="fas fa-reply"></i> Answer
                     </button>
                 ';
         
@@ -251,7 +251,7 @@ function display_comments($post_id, $parent_id = 0, $level = 0) {
                 if ($logged == 'Yes' && $comment['guest'] == 'No' && $rowu['id'] == $comment['user_id']) {
                     echo '
                     <a href="edit-comment.php?id=' . $comment['id'] . '" class="btn btn-sm btn-link text-primary">
-                        <i class="fas fa-edit"></i> Modifier
+                        <i class="fas fa-edit"></i> To modify
                     </a>';
                 }
                 
@@ -347,14 +347,14 @@ function render_comment_html($comment_id, $margin_left = 0) {
             <hr class="my-0" />
                 <div class="p-2">
                     <button class="btn btn-sm btn-link" onclick="replyToComment(<?php echo $comment['id']; ?>)">
-                        <i class="fas fa-reply"></i> Répondre
+                        <i class="fas fa-reply"></i> Answer
                     </button>
                     <?php
                     // AJOUT : Bouton Modifier si l'utilisateur est l'auteur
                     if ($logged == 'Yes' && $comment['guest'] == 'No' && $rowu['id'] == $comment['user_id']) {
                         echo '
                         <a href="edit-comment.php?id=' . $comment['id'] . '" class="btn btn-sm btn-link text-primary">
-                            <i class="fas fa-edit"></i> Modifier
+                            <i class="fas fa-edit"></i> To modify
                         </a>';
                     }
                     ?>
@@ -547,13 +547,13 @@ function get_user_comment_badge($user_id)
 
     // 2. Définir les seuils et les badges
     if ($count >= 50) {
-        return '<span class="badge bg-warning text-dark ms-1"><i class="fas fa-star"></i> Vétéran</span>';
+        return '<span class="badge bg-warning text-dark ms-1"><i class="fas fa-star"></i> Veteran</span>';
     } elseif ($count >= 20) {
-        return '<span class="badge bg-success ms-1"><i class="fas fa-comments"></i> Fidèle</span>';
+        return '<span class="badge bg-success ms-1"><i class="fas fa-comments"></i> Loyal</span>';
     } elseif ($count >= 5) {
-        return '<span class="badge bg-info ms-1"><i class="fas fa-comment-dots"></i> Actif</span>';
+        return '<span class="badge bg-info ms-1"><i class="fas fa-comment-dots"></i> Active</span>';
     } elseif ($count >= 1) {
-        return '<span class="badge bg-secondary ms-1"><i class="fas fa-comment"></i> Pipelette</span>';
+        return '<span class="badge bg-secondary ms-1"><i class="fas fa-comment"></i> Pipette</span>';
     }
 
     return ''; // Pas de badge si 0 commentaire
@@ -577,7 +577,7 @@ function get_reading_time($content, $wpm = 200) {
     }
     
     // 5. Retourner la chaîne formatée
-    return '<i class="far fa-clock"></i> Lecture : ' . $minutes . ' min';
+    return '<i class="far fa-clock"></i> Read: ' . $minutes . ' min';
 }
 
 function head()
@@ -1100,7 +1100,7 @@ if ($current_page == 'my-favorites.php') {
 	echo ' active';
 }
 ?>" href="my-favorites.php"> 
-                                    <i class="fa fa-bookmark"></i> Mes Favoris
+                                    <i class="fa fa-bookmark"></i> My favorites
 								</a>
 							</li>
 							<li>

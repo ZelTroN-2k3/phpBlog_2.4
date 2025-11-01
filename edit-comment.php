@@ -36,7 +36,7 @@ if (isset($_POST['save_comment'])) {
     $new_comment_content = $_POST['comment_content'];
     
     if (strlen($new_comment_content) < 2) {
-        echo '<div class="alert alert-danger">Votre commentaire est trop court.</div>';
+        echo '<div class="alert alert-danger">Your comment is too short.</div>';
     } else {
         // Mettre à jour le commentaire
         $stmt_update = mysqli_prepare($connect, "UPDATE comments SET comment = ? WHERE id = ? AND user_id = ?");
@@ -45,7 +45,7 @@ if (isset($_POST['save_comment'])) {
         mysqli_stmt_close($stmt_update);
         
         // Rediriger vers "Mes Commentaires"
-        echo '<div class="alert alert-success">Commentaire mis à jour !</div>';
+        echo '<div class="alert alert-success">Comment updated!</div>';
         echo '<meta http-equiv="refresh" content="2;url=my-comments.php">';
     }
 }
@@ -58,17 +58,17 @@ if ($settings['sidebar_position'] == 'Left') {
 
 <div class="col-md-8 mb-3">
     <div class="card">
-        <div class="card-header"><i class="fa fa-edit"></i> Modifier mon commentaire</div>
+        <div class="card-header"><i class="fa fa-edit"></i> Edit my comment</div>
         <div class="card-body">
             
             <form method="post" action="">
                 <p>
-                    <label for="comment_content">Votre commentaire :</label>
+                    <label for="comment_content">Your comment:</label>
                     <textarea name="comment_content" id="comment_content" rows="6" class="form-control" required><?php echo htmlspecialchars($comment['comment']); ?></textarea>
-                    <small>Article original : <a href="post.php?name=<?php echo post_slug($comment['post_id']); ?>#comment-<?php echo $comment['id']; ?>" target="_blank"><?php echo post_title($comment['post_id']); ?></a></small>
+                    <small>Original article: <a href="post.php?name=<?php echo post_slug($comment['post_id']); ?>#comment-<?php echo $comment['id']; ?>" target="_blank"><?php echo post_title($comment['post_id']); ?></a></small>
                 </p>
                 <br>
-                <input type="submit" name="save_comment" class="btn btn-primary col-12" value="Enregistrer les modifications" />
+                <input type="submit" name="save_comment" class="btn btn-primary col-12" value="Save changes" />
             </form>
 
         </div>

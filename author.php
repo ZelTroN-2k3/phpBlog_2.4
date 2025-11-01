@@ -51,7 +51,7 @@ mysqli_stmt_close($stmt_author);
     </div>
 
     <div class="card">
-        <div class="card-header"><i class="far fa-file-alt"></i> Articles de <?php echo $author_name; ?></div>
+        <div class="card-header"><i class="far fa-file-alt"></i> Items from <?php echo $author_name; ?></div>
         <div class="card-body">
 
 <?php
@@ -77,7 +77,7 @@ $numrows = $row_count['numrows'];
 mysqli_stmt_close($stmt_count);
 
 if ($numrows == 0) {
-    echo '<div class="alert alert-info">Cet auteur n\'a pas encore publié d\'articles.</div>';
+    echo '<div class="alert alert-info">This author has not yet published any articles.</div>';
 } else {
     // 7. Récupérer les articles paginés
     $stmt_posts = mysqli_prepare($connect, "SELECT * FROM posts WHERE author_id=? AND active='Yes' AND publish_at <= NOW() ORDER BY id DESC LIMIT ?, ?");

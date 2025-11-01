@@ -17,7 +17,7 @@
   'layout' => 'Boxed',
   'latestposts_bar' => 'Enabled',
   'sidebar_position' => 'Right',
-  'posts_per_row' => '3',
+  'posts_per_row' => '2',
   'theme' => 'Bootstrap 5',
   'background_image' => '',
 ); ?>

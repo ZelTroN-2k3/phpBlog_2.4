@@ -30,7 +30,7 @@ mysqli_stmt_close($stmt_tag);
             <div class="col-md-8 mb-3">
 
                 <div class="card">
-                    <div class="card-header"><i class="fas fa-tag"></i> Articles tagués : <?php
+                    <div class="card-header"><i class="fas fa-tag"></i> Articles tagged: <?php
 echo htmlspecialchars($tag_name);
 ?></div>
                     <div class="card-body">
@@ -63,7 +63,7 @@ $numrows = $row_count['numrows'];
 mysqli_stmt_close($stmt_count);
 
 if ($numrows <= 0) {
-    echo '<div class="alert alert-info">Il n\'y a aucun article publié avec ce tag.</div>';
+    echo '<div class="alert alert-info">There are no articles published with this tag.</div>';
 } else {
     
     // 3. Récupérer les articles paginés pour ce tag

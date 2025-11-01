@@ -92,12 +92,12 @@ echo '
 				
 				';
                 if (!empty($row['download_link']) || !empty($row['github_link'])) {
-                    echo '<h5><i class="fas fa-download"></i> Téléchargements</h5>';
+                    echo '<h5><i class="fas fa-download"></i> Downloads</h5>';
                     
                     if (!empty($row['download_link'])) {
                         echo '
                         <a href="' . htmlspecialchars($row['download_link']) . '" class="btn btn-primary me-2 mb-2" target="_blank" rel="noopener noreferrer">
-                            <i class="fas fa-file-archive"></i> Télécharger (.zip/.rar)
+                            <i class="fas fa-file-archive"></i> Download (.zip/.rar)
                         </a>';
                     }
                     
@@ -145,7 +145,7 @@ echo '
 				$user_has_liked = check_user_has_liked($post_id);
 				
 				$like_class = $user_has_liked ? 'btn-primary' : 'btn-outline-primary';
-				$like_text = $user_has_liked ? 'Aimé' : 'J\'aime';
+				$like_text = $user_has_liked ? 'Love' : 'I like';
 				?>
 				
 				<button class="btn <?php echo $like_class; ?> mt-2" id="like-button" data-post-id="<?php echo $post_id; ?>">
@@ -159,7 +159,7 @@ echo '
                     // Déterminer l'apparence initiale du bouton
                     $fav_class = $user_has_favorited ? 'btn-warning' : 'btn-outline-warning';
                     $fav_icon = $user_has_favorited ? 'fas fa-bookmark' : 'far fa-bookmark'; // fas = plein, far = vide
-                    $fav_text = $user_has_favorited ? 'Enregistré' : 'Enregistrer';
+                    $fav_text = $user_has_favorited ? 'Enregistré' : 'Save Favorite';
                 ?>
                     
                     <button class="btn <?php echo $fav_class; ?> mt-2 ms-2" id="favorite-button" data-post-id="<?php echo $post_id; ?>">
@@ -539,11 +539,11 @@ document.getElementById('like-button').addEventListener('click', function() {
             if (data.liked) {
                 likeButton.classList.remove('btn-outline-primary');
                 likeButton.classList.add('btn-primary');
-                likeText.innerText = 'Aimé';
+                likeText.innerText = 'Love';
             } else {
                 likeButton.classList.remove('btn-primary');
                 likeButton.classList.add('btn-outline-primary');
-                likeText.innerText = 'J\'aime';
+                likeText.innerText = 'I like';
             }
         } else {
             console.error(data.message);

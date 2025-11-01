@@ -29,7 +29,7 @@ if (isset($_GET['remove-favorite'])) {
 ?>
     <div class="col-md-8 mb-3">
         <div class="card">
-            <div class="card-header"><i class="fas fa-bookmark"></i> Mes Favoris</div>
+            <div class="card-header"><i class="fas fa-bookmark"></i> My favorites</div>
             <div class="card-body">
 
 <?php
@@ -46,7 +46,7 @@ $query = mysqli_stmt_get_result($stmt_favs);
 
 $count = mysqli_num_rows($query);
 if ($count <= 0) {
-    echo '<div class="alert alert-info">Vous n\'avez encore aucun article en favori.</div>';
+    echo '<div class="alert alert-info">You don\'t have any favorite items yet.</div>';
 } else {
     // 3. Afficher chaque article (similaire à blog.php)
     while ($row = mysqli_fetch_array($query)) {

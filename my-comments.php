@@ -79,7 +79,7 @@ if ($count <= 0) {
 								<i class="fas fa-newspaper"></i> On post: <a href="post?name=' . post_slug($comment['post_id']) . '#comment-' . $comment['id'] . '">' . post_title($comment['post_id'])  . '</a>
 							</div>
 							<div class="col-md-2 d-flex justify-content-end">
-								<a href="edit-comment.php?id=' . $comment['id'] . '" class="btn btn-primary btn-sm me-2" title="Modifier">
+								<a href="edit-comment.php?id=' . $comment['id'] . '" class="btn btn-primary btn-sm me-2" title="To modify">
 									<i class="fa fa-edit"></i>
 								</a>
 								<a href="?delete-comment=' . $comment['id']  . '" class="btn btn-danger btn-sm" title="Delete">
