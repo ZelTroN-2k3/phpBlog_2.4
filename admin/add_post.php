@@ -171,9 +171,9 @@ if (isset($_POST['add'])) {
                     <p>
 						<label>Statut</label><br />
 						<select name="active" class="form-select" required>
-							<option value="Draft" selected>Ébauche (Brouillon)</option>
-                            <option value="Yes">Publié (Public)</option>
-							<option value="No">Inactif (Caché)</option>
+							<option value="Draft" selected>Draft (draft)</option>
+                            <option value="Yes">Published (public)</option>
+							<option value="No">Inactive (hidden)</option>
                         </select>
 					</p>
                     <p>
@@ -184,9 +184,9 @@ if (isset($_POST['add'])) {
                         </select>
 					</p>
                     <p>
-						<label>Date de Publication</label>
+						<label>Publication Date</label>
 						<input type="datetime-local" class="form-control" name="publish_at" value="<?php echo date('Y-m-d\TH:i'); ?>" required>
-						<i>Par défaut, c'est maintenant. Modifiez pour programmer la publication.</i>
+						<i>By default, it's now. Change to schedule publication.</i>
 					</p>                    
 					<p>
 						<label>Category</label><br />
@@ -205,17 +205,17 @@ while ($rw = mysqli_fetch_assoc($crun)) {
 					<p>
 						<label>Tags</label>
 						<input name="tags" class="form-control" value="" placeholder="php, javascript, css">
-						<i>Séparez les tags par une virgule ou Entrée.</i>
+						<i>Separate tags with a comma or Enter.</i>
 					</p>
 					<p>
-						<label>Lien de téléchargement (.rar, .zip)</label>
+						<label>Download link (.rar, .zip)</label>
 						<div class="input-group">
 							<span class="input-group-text"><i class="fas fa-file-archive"></i></span>
 							<input class="form-control" name="download_link" value="" type="url" placeholder="https://.../file.zip">
 						</div>
 					</p>
 					<p>
-						<label>Lien GitHub</label>
+						<label>GitHub link</label>
 						<div class="input-group">
 							<span class="input-group-text"><i class="fab fa-github"></i></span>
 							<input class="form-control" name="github_link" value="" type="url" placeholder="https://github.com/user/repo">

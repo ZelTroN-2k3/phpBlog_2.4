@@ -221,9 +221,9 @@ if ($row['image'] != '') {
                 <p>
 				<label>Statut</label><br />
 				<select name="active" class="form-select" required>
-					<option value="Draft" <?php if ($row['active'] == "Draft") { echo 'selected'; } ?>>Ébauche (Brouillon)</option>
-                    <option value="Yes" <?php if ($row['active'] == "Yes") { echo 'selected'; } ?>>Publié (Public)</option>
-					<option value="No" <?php if ($row['active'] == "No") { echo 'selected'; } ?>>Inactif (Caché)</option>
+					<option value="Draft" <?php if ($row['active'] == "Draft") { echo 'selected'; } ?>>Draft (draft)</option>
+                    <option value="Yes" <?php if ($row['active'] == "Yes") { echo 'selected'; } ?>>Published (public)</option>
+					<option value="No" <?php if ($row['active'] == "No") { echo 'selected'; } ?>>Inactive (hidden)</option>
 				</select>
 				</p>
                 <p>
@@ -242,7 +242,7 @@ if ($row['featured'] == "Yes") {
 					</select>
 				</p>
                 <p>
-                    <label>Date de Publication</label>
+                    <label>Publication Date</label>
                     <input type="datetime-local" class="form-control" name="publish_at" value="<?php echo date('Y-m-d\TH:i', strtotime($row['publish_at'])); ?>" required>
                 </p>                
 				<p>
@@ -264,17 +264,17 @@ while ($rw = mysqli_fetch_assoc($crun)) {
 				<p>
 					<label>Tags</label>
 					<input name="tags" class="form-control" value="<?php echo htmlspecialchars($tags_value); ?>" placeholder="php, javascript, css">
-					<i>Séparez les tags par une virgule ou Entrée.</i>
+					<i>Separate tags with a comma or Enter.</i>
 				</p>
 				<p>
-					<label>Lien de téléchargement (.rar, .zip)</label>
+					<label>Download link (.rar, .zip)</label>
 					<div class="input-group">
 						<span class="input-group-text"><i class="fas fa-file-archive"></i></span>
 						<input class="form-control" name="download_link" value="<?php echo htmlspecialchars($row['download_link']); ?>" type="url" placeholder="https://.../file.zip">
 					</div>
 				</p>
 				<p>
-					<label>Lien GitHub</label>
+					<label>GitHub link</label>
 					<div class="input-group">
 						<span class="input-group-text"><i class="fab fa-github"></i></span>
 						<input class="form-control" name="github_link" value="<?php echo htmlspecialchars($row['github_link']); ?>" type="url" placeholder="https://github.com/user/repo">
@@ -339,11 +339,11 @@ while ($row = mysqli_fetch_assoc($sql)) {
 						
                         <td>';
     if($row['active'] == "Yes") {
-        echo '<span class="badge bg-success">Publié</span>';
+        echo '<span class="badge bg-success">Published</span>';
     } elseif($row['active'] == "Draft") {
-        echo '<span class="badge bg-warning text-dark">Ébauche</span>';
+        echo '<span class="badge bg-warning text-dark">Draft</span>';
     } else {
-        echo '<span class="badge bg-danger">Inactif</span>';
+        echo '<span class="badge bg-danger">Inactive</span>';
     }
     echo '</td>
                         <td>' . $cat['category'] . '</td>
